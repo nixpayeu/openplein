@@ -10,34 +10,44 @@ export interface PleinClient {
   pay(p: { amount: string; currency: "EUR"; description: string }): Promise<{ status: "paid" | "canceled" | "failed" }>;
   identity: { request(): Promise<{ email: string }> };
   storage: { get(key: string): Promise<string | null>; set(key: string, value: string): Promise<void> };
+  dispose(): void;
 }
 
 export function createPleinClient(opts: { target?: Window; timeoutMs?: number } = {}): PleinClient {
   const target = opts.target ?? window.parent;
   const timeoutMs = opts.timeoutMs ?? 30_000;
-  const pending = new Map<string, { resolve: (v: unknown) => void; reject: (e: PleinError) => void }>();
+  const pending = new Map<string, { resolve: (v: unknown) => void; reject: (e: PleinError) => void; timer: ReturnType<typeof setTimeout> }>();
   let seq = 0;
+  let disposed = false;
 
-  window.addEventListener("message", (ev: MessageEvent) => {
+  const handleMessage = (ev: MessageEvent) => {
+    // Validate response comes from target window (null allowed for jsdom/tests)
+    if (ev.source !== null && ev.source !== target) return;
+
     const data = ev.data as BridgeResponse;
     if (typeof data !== "object" || data === null || data.plein !== PROTOCOL_VERSION) return;
     if (!("ok" in data)) return; // requests negeren (alleen responses afhandelen)
     const p = pending.get(data.id);
     if (!p) return;
     pending.delete(data.id);
+    clearTimeout(p.timer);
     if (data.ok) p.resolve(data.result);
     else p.reject(new PleinError(data.error.code, data.error.message));
-  });
+  };
+
+  window.addEventListener("message", handleMessage);
 
   function call(method: string, params?: unknown): Promise<unknown> {
+    if (disposed) return Promise.reject(new PleinError("TIMEOUT", "client disposed"));
+
     const id = `${Date.now()}-${seq++}`;
     const req: BridgeRequest = { plein: PROTOCOL_VERSION, id, method, params };
     return new Promise((resolve, reject) => {
-      pending.set(id, { resolve, reject });
-      target.postMessage(req, "*");
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         if (pending.delete(id)) reject(new PleinError("TIMEOUT", `Geen antwoord op ${method}`));
       }, timeoutMs);
+      pending.set(id, { resolve, reject, timer });
+      target.postMessage(req, "*");
     });
   }
 
@@ -47,6 +57,15 @@ export function createPleinClient(opts: { target?: Window; timeoutMs?: number } 
     storage: {
       get: (key) => call("storage.get", { key }) as Promise<string | null>,
       set: (key, value) => call("storage.set", { key, value }) as Promise<void>,
+    },
+    dispose: () => {
+      disposed = true;
+      window.removeEventListener("message", handleMessage);
+      for (const entry of pending.values()) {
+        clearTimeout(entry.timer);
+        entry.reject(new PleinError("TIMEOUT", "client disposed"));
+      }
+      pending.clear();
     },
   };
 }
