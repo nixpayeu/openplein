@@ -1,0 +1,6 @@
+{
+  "id": "__ID__", "name": "__NAME__", "version": "0.1.0",
+  "icon": "icon.svg", "entry": "http://localhost:5190/",
+  "provider": { "name": "__NAME__", "url": "https://example.eu" },
+  "permissions": ["storage"]
+}

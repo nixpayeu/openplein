@@ -4,5 +4,7 @@
   "type": "module",
   "license": "MIT",
   "main": "src/index.ts",
+  "bin": { "create-plein-app": "./src/cli.ts" },
+  "files": ["src", "template"],
   "dependencies": { "ajv": "^8.16.0", "ajv-formats": "^3.0.0" }
 }
