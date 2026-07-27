@@ -28,18 +28,18 @@ Het project speelt drie rollen tegelijk:
 | Aanpak | Dunne eigen runtime, dikke Europese bouwstenen: Matrix, EUDI-wallet en Nixpay als verwisselbare providers, niet als eigen bouwwerk |
 | Naam | **OpenPlein**, roepnaam Plein; domein **openplein.eu** (vrij per 2026-07-27; kale varianten plein.eu/.nl/.app zijn bezet) |
 | Eigendom | Auteursrecht en merk bij Nixpay B.V.; publiek onder SAIG-vlag als initiatiefnemer |
-| Licentie | AGPL-3.0 voor `runtime` en `bridge`; MIT of Apache-2.0 voor `sdk` en het manifest-schema, zodat mini-app-bouwers niet door AGPL geraakt worden |
+| Licentie | AGPL-3.0 voor `runtime` en `bridge`; MIT voor `sdk` en het manifest-schema, zodat mini-app-bouwers niet door AGPL geraakt worden |
 | Distributie | PWA-first; store-builds (Google Play + App Store) via Capacitor in fase 1 — beide developer-accounts zijn beschikbaar |
 | Funding-volgorde | Eerst MVP bouwen, dán NGI Zero-aanvraag met werkende demo |
 
 ## Repo-structuur
 
-Monorepo `sovereignaigrid/plein` (nieuwe GitHub-org voor SAIG, zodat andere
+Monorepo `sovereignaigrid/openplein` (nieuwe GitHub-org voor SAIG, zodat andere
 SAIG-repos er later onder kunnen):
 
 - `packages/runtime` — de shell/container (PWA), AGPL-3.0
 - `packages/bridge` — mini-app JavaScript-API + permissiemodel, AGPL-3.0
-- `packages/sdk` — manifest-schema, TypeScript-types, `create-plein-app`-starter, MIT/Apache-2.0
+- `packages/sdk` — manifest-schema, TypeScript-types, `create-plein-app`-starter, MIT
 - `apps/demo` — gehoste demo-super-app met twee demo-mini-apps
 - `docs/` — architectuur, mini-app-spec, `docs/funding/` voor de NGI-aanvraag
 
