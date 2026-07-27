@@ -15,4 +15,10 @@ describe("PermissionStore", () => {
     expect(s2.decision("a", "payments")).toBe("denied");
     expect(s2.decision("b", "storage")).toBe("unset");
   });
+  it("overleeft corrupte localStorage-inhoud", () => {
+    localStorage.setItem("plein.permissions", "null");
+    expect(new PermissionStore().decision("a", "storage")).toBe("unset");
+    localStorage.setItem("plein.permissions", "[1,2]");
+    expect(new PermissionStore().decision("a", "storage")).toBe("unset");
+  });
 });

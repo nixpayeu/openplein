@@ -11,4 +11,10 @@ describe("storageProvider", () => {
     expect(await storageProvider.get("app.b", "k")).toBe("2");
     expect(await storageProvider.get("app.c", "k")).toBe(null);
   });
+  it("botst niet bij geneste appIds (prefix-ambiguïteit)", async () => {
+    await storageProvider.set("nl.easeo", "lijstje.x", "A");
+    await storageProvider.set("nl.easeo.lijstje", "x", "B");
+    expect(await storageProvider.get("nl.easeo", "lijstje.x")).toBe("A");
+    expect(await storageProvider.get("nl.easeo.lijstje", "x")).toBe("B");
+  });
 });

@@ -5,8 +5,11 @@ type Stored = Record<string, Partial<Record<Permission, boolean>>>;
 
 export class PermissionStore {
   private read(): Stored {
-    try { return JSON.parse(localStorage.getItem(KEY) ?? "{}") as Stored; }
-    catch { return {}; }
+    try {
+      const parsed: unknown = JSON.parse(localStorage.getItem(KEY) ?? "{}");
+      return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+        ? (parsed as Stored) : {};
+    } catch { return {}; }
   }
   private write(s: Stored): void { localStorage.setItem(KEY, JSON.stringify(s)); }
 
