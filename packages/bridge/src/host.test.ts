@@ -62,4 +62,25 @@ describe("PleinHost", () => {
     await flush();
     expect(sent).toHaveLength(0);
   });
+  it("faalt gesloten als de gate gooit", async () => {
+    const sent: BridgeResponse[] = [];
+    const source = { postMessage: (m: BridgeResponse) => sent.push(m) } as unknown as Window;
+    const host = new PleinHost({
+      manifest, source, gate: async () => { throw new Error("db down"); },
+      providers: {
+        pay: vi.fn(), identityRequest: vi.fn(),
+        storageGet: vi.fn(async () => "melk"), storageSet: vi.fn(async () => {}),
+      } as never,
+    });
+    host.start();
+    deliver(source, { plein: "0.1", id: "f", method: "storage.get", params: { key: "x" } });
+    await flush();
+    expect(sent[0]).toMatchObject({ ok: false, error: { code: "PERMISSION_DENIED" } });
+  });
+  it("geeft INVALID_PARAMS bij ontbrekende key", async () => {
+    const { sent, source } = makeHost(true);
+    deliver(source, { plein: "0.1", id: "g", method: "storage.set", params: { value: "1" } });
+    await flush();
+    expect(sent[0]).toMatchObject({ ok: false, error: { code: "INVALID_PARAMS" } });
+  });
 });

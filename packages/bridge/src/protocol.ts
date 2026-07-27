@@ -4,7 +4,7 @@ export const PROTOCOL_VERSION = "0.1" as const;
 
 export type PleinErrorCode =
   | "PERMISSION_DENIED" | "UNKNOWN_METHOD" | "PROVIDER_ERROR"
-  | "NOT_AUTHENTICATED" | "TIMEOUT";
+  | "NOT_AUTHENTICATED" | "TIMEOUT" | "INVALID_PARAMS";
 
 export interface BridgeRequest {
   plein: typeof PROTOCOL_VERSION; id: string; method: string; params?: unknown;

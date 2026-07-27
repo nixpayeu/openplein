@@ -47,7 +47,21 @@ export class PleinHost {
     if (!permission) {
       return this.respond(req.id, { ok: false, error: { code: "UNKNOWN_METHOD", message: req.method } });
     }
-    if (!manifest.permissions.includes(permission) || !(await gate(manifest.id, permission))) {
+    if (!manifest.permissions.includes(permission)) {
+      return this.respond(req.id, {
+        ok: false, error: { code: "PERMISSION_DENIED", message: `${permission} geweigerd` },
+      });
+    }
+    // Gate check is inside try/catch to fail closed if gate throws
+    let gateAllows = false;
+    try {
+      gateAllows = await gate(manifest.id, permission);
+    } catch {
+      return this.respond(req.id, {
+        ok: false, error: { code: "PERMISSION_DENIED", message: "permissiecontrole mislukt" },
+      });
+    }
+    if (!gateAllows) {
       return this.respond(req.id, {
         ok: false, error: { code: "PERMISSION_DENIED", message: `${permission} geweigerd` },
       });
@@ -56,10 +70,35 @@ export class PleinHost {
       const p = (req.params ?? {}) as { key?: string; value?: string };
       let result: unknown;
       switch (req.method) {
-        case "pay": result = await providers.pay(manifest.id, req.params); break;
-        case "identity.request": result = await providers.identityRequest(manifest.id); break;
-        case "storage.get": result = await providers.storageGet(manifest.id, String(p.key)); break;
-        case "storage.set": result = await providers.storageSet(manifest.id, String(p.key), String(p.value)); break;
+        case "pay":
+          result = await providers.pay(manifest.id, req.params);
+          break;
+        case "identity.request":
+          result = await providers.identityRequest(manifest.id);
+          break;
+        case "storage.get":
+          if (typeof p.key !== "string" || p.key.length === 0) {
+            return this.respond(req.id, {
+              ok: false, error: { code: "INVALID_PARAMS", message: "key is required and must be a non-empty string" },
+            });
+          }
+          result = await providers.storageGet(manifest.id, p.key);
+          break;
+        case "storage.set":
+          if (typeof p.key !== "string" || p.key.length === 0) {
+            return this.respond(req.id, {
+              ok: false, error: { code: "INVALID_PARAMS", message: "key is required and must be a non-empty string" },
+            });
+          }
+          if (typeof p.value !== "string") {
+            return this.respond(req.id, {
+              ok: false, error: { code: "INVALID_PARAMS", message: "value is required and must be a string" },
+            });
+          }
+          result = await providers.storageSet(manifest.id, p.key, p.value);
+          break;
+        default:
+          return this.respond(req.id, { ok: false, error: { code: "UNKNOWN_METHOD", message: req.method } });
       }
       this.respond(req.id, { ok: true, result });
     } catch (e) {
