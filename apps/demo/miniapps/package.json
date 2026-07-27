@@ -1,0 +1,9 @@
+{
+  "name": "@openplein/demo-miniapps",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:lijstje": "npx --yes serve -l 5180 lijstje",
+    "dev:betalen": "npx --yes serve -l 5181 betalen"
+  }
+}
