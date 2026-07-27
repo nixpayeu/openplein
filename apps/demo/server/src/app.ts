@@ -47,6 +47,10 @@ export function createApp(opts: Options): App {
     return c.body(null, 204);
   });
 
+  if (opts.authSecret === "e2e") {
+    app.get("/api/auth/debug-last-code", (c) => c.json({ code: app.debugLastCode ?? "" }));
+  }
+
   app.post("/api/auth/verify", async (c) => {
     const { email, code } = await c.req.json<{ email: string; code: string }>();
     const entry = codes.get(email);
