@@ -21,8 +21,8 @@ export function createPleinClient(opts: { target?: Window; timeoutMs?: number } 
   let disposed = false;
 
   const handleMessage = (ev: MessageEvent) => {
-    // Validate response comes from target window (null allowed for jsdom/tests)
-    if (ev.source !== null && ev.source !== target) return;
+    // Validate response comes from target window; reject all other sources
+    if (ev.source !== target) return;
 
     const data = ev.data as BridgeResponse;
     if (typeof data !== "object" || data === null || data.plein !== PROTOCOL_VERSION) return;
@@ -38,6 +38,7 @@ export function createPleinClient(opts: { target?: Window; timeoutMs?: number } 
   window.addEventListener("message", handleMessage);
 
   function call(method: string, params?: unknown): Promise<unknown> {
+    // Reuse TIMEOUT code for disposed clients (no DISPOSED code in PleinErrorCode by design)
     if (disposed) return Promise.reject(new PleinError("TIMEOUT", "client disposed"));
 
     const id = `${Date.now()}-${seq++}`;
@@ -63,6 +64,7 @@ export function createPleinClient(opts: { target?: Window; timeoutMs?: number } 
       window.removeEventListener("message", handleMessage);
       for (const entry of pending.values()) {
         clearTimeout(entry.timer);
+        // Reuse TIMEOUT code for disposal rejections (no DISPOSED code in PleinErrorCode by design)
         entry.reject(new PleinError("TIMEOUT", "client disposed"));
       }
       pending.clear();

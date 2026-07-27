@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach } from "vitest";
-import { createPleinClient, PleinError } from "./client";
-import { isBridgeRequest, type BridgeRequest, type BridgeResponse } from "./protocol";
+import { createPleinClient, PleinError, type PleinClient } from "./client";
+import { isBridgeRequest, type BridgeRequest, type BridgeResponse, type PleinErrorCode } from "./protocol";
 
 // Store clients and fake host listeners for cleanup
 const clients: Array<PleinClient & { dispose?: () => void }> = [];
 const fakeHostListeners: EventListener[] = [];
 
-function fakeHost(reply: (req: BridgeRequest) => BridgeResponse["error"] | { result: unknown }) {
+function fakeHost(reply: (req: BridgeRequest) => { code: PleinErrorCode; message: string } | { result: unknown }) {
   // vangt requests op window en antwoordt zoals een echte host
   const listener = (ev: MessageEvent) => {
     if (!isBridgeRequest(ev.data)) return;
@@ -17,10 +17,10 @@ function fakeHost(reply: (req: BridgeRequest) => BridgeResponse["error"] | { res
       "result" in r
         ? { plein: "0.1", id: req.id, ok: true, result: r.result }
         : { plein: "0.1", id: req.id, ok: false, error: r };
-    window.postMessage(resp, "*");
+    window.dispatchEvent(new MessageEvent("message", { data: resp, source: window }));
   };
-  window.addEventListener("message", listener);
-  fakeHostListeners.push(listener);
+  window.addEventListener("message", listener as EventListener);
+  fakeHostListeners.push(listener as EventListener);
 }
 
 describe("createPleinClient", () => {
@@ -66,8 +66,8 @@ describe("createPleinClient", () => {
         capturedId = ev.data.id;
       }
     };
-    window.addEventListener("message", captureListener);
-    fakeHostListeners.push(captureListener);
+    window.addEventListener("message", captureListener as EventListener);
+    fakeHostListeners.push(captureListener as EventListener);
 
     // Create client with short timeout, start a call that won't be answered
     const plein = createPleinClient({ target: window, timeoutMs: 100 });
