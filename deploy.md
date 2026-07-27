@@ -21,6 +21,16 @@ zijn:
    `sovereignaigrid.nl` vóórdat Caddy een geldig Let's Encrypt-certificaat
    kan uitgeven. Zonder dit record faalt de Caddy-reload met een
    ACME-timeout.
+3. **Sanity check: extern Docker-netwerk `proxy` bestaat al op de VPS.**
+   `docker-compose.yml` verwacht een extern netwerk `proxy` (de Caddy-
+   container `caddy` hangt daar al aan). Controleer vóór `docker compose
+   up`:
+   ```bash
+   ssh nextcloud-vps 'docker network inspect proxy' | grep -A2 '"Name": "caddy"'
+   ```
+   Staat `caddy` er niet tussen, dan is het netwerk verkeerd of ontbreekt
+   het — eerst uitzoeken vóórdat je verdergaat (zie stap 3 voor het
+   troubleshoot-commando).
 
 ## 1. Code naar de VPS
 
@@ -65,6 +75,28 @@ docker compose logs -f openplein   # login-code verschijnt hier tijdens het test
 De service luistert alleen op `127.0.0.1:5175` (zie `docker-compose.yml`)
 — publieke toegang loopt uitsluitend via de Caddy reverse-proxy.
 
+**Connectiviteit-check vóór je de Caddy-route aanzet:** bevestig dat
+`caddy` de `openplein`-container via de container-DNS-naam kan bereiken op
+het `proxy`-netwerk:
+
+```bash
+docker exec caddy wget -qO- http://openplein:5175/ | head -c 100
+```
+
+Dit hoort de eerste ~100 bytes van de gebouwde `index.html` terug te
+geven. Krijg je een `wget`-resolve-fout (`bad address 'openplein'`) of
+timeout, dan zit `openplein` niet op hetzelfde netwerk als `caddy` —
+controleer:
+
+```bash
+docker network ls                         # bestaat "proxy"?
+docker inspect openplein --format '{{json .NetworkSettings.Networks}}'
+```
+
+en dat `docker-compose.yml` van openplein `networks: [proxy]` bevat en het
+externe `proxy`-netwerk (`networks: { proxy: { external: true } }`)
+overeenkomt met de naam die `caddy` gebruikt.
+
 ## 4. Caddy-route
 
 Voeg toe aan `/opt/docker/core/caddy/Caddyfile`:
@@ -76,8 +108,13 @@ plein.sovereignaigrid.nl {
 ```
 
 `openplein` moet op hetzelfde Docker-netwerk zitten als de Caddy-container
-(bestaand VPS-patroon — zie de andere service-blocks in dezelfde
-Caddyfile voor het netwerknaam-conventie).
+om via de containernaam bereikbaar te zijn. Op deze VPS is dat het
+externe netwerk **`proxy`**: de Caddy-container heet **`caddy`** en hangt
+daar al aan. `docker-compose.yml` van dit project declareert dat expliciet
+(`networks: [proxy]` op de service, plus een top-level
+`networks: { proxy: { external: true } }`) — er is geen extra
+netwerk-setup nodig zolang `proxy` op de VPS al bestaat (zie
+Preconditions, punt 3).
 
 Herlaad Caddy met het bestaande reload-patroon van de VPS:
 

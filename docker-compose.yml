@@ -9,3 +9,8 @@ services:
       SERVE_STATIC: "1"
     ports:
       - "127.0.0.1:5175:5175"
+    networks: [proxy]
+
+networks:
+  proxy:
+    external: true
