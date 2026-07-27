@@ -23,7 +23,9 @@ export function App() {
   const [active, setActive] = useState<PleinManifest | null>(null);
   const [permReq, setPermReq] = useState<PermissionRequest | null>(null);
 
-  useEffect(() => { void loadCatalog().then(setCatalog); }, []);
+  useEffect(() => {
+    void loadCatalog().then(setCatalog).catch((e) => console.warn("Catalogus laden mislukt:", e));
+  }, []);
 
   const gate = useCallback(async (app: PleinManifest, permission: Permission) => {
     const d = permissionStore.decision(app.id, permission);
@@ -44,11 +46,16 @@ export function App() {
     setSession(s);
   };
 
+  const closeMiniApp = () => {
+    if (permReq) { permReq.resolve(false); setPermReq(null); }
+    setActive(null);
+  };
+
   if (!session) return <LoginView onLogin={login} />;
   return (
     <>
       {active ? (
-        <MiniAppView app={active} session={session} gate={gate} onClose={() => setActive(null)} />
+        <MiniAppView app={active} session={session} gate={gate} onClose={closeMiniApp} />
       ) : (
         <HomeScreen catalog={catalog} onOpen={setActive} />
       )}
