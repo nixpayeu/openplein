@@ -24,4 +24,8 @@ describe("validateManifest", () => {
     const r = validateManifest({ ...valid, permissions: ["camera"] });
     expect(r.valid).toBe(false);
   });
+  it("weigert een entry die geen URI is", () => {
+    const r = validateManifest({ ...valid, entry: "geen uri" });
+    expect(r.valid).toBe(false);
+  });
 });

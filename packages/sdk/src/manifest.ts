@@ -1,4 +1,5 @@
-import Ajv from "ajv";
+import Ajv from "ajv/dist/2020";
+import addFormats from "ajv-formats";
 import schema from "./schema.json" with { type: "json" };
 
 export const PERMISSIONS = ["payments", "identity", "storage", "notifications"] as const;
@@ -10,8 +11,8 @@ export interface PleinManifest {
   permissions: Permission[];
 }
 
-const ajv = new Ajv({ allErrors: true, validateSchema: false });
-ajv.addFormat("uri", /^.+/); // simple pattern for URI validation
+const ajv = new Ajv({ allErrors: true });
+addFormats(ajv);
 const check = ajv.compile(schema);
 
 export function validateManifest(
