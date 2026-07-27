@@ -24,7 +24,8 @@ Volgende stappen:
 }
 
 // CLI-entry
-const invokedDirectly = process.argv[1]?.endsWith("cli.ts") || process.argv[1]?.endsWith("create-plein-app");
+const invokedDirectly =
+  process.argv[1]?.endsWith("cli.ts") || (process.argv[1]?.includes("create-plein-app") ?? false);
 if (invokedDirectly) {
   const name = process.argv[2];
   if (!name) { console.error("Gebruik: create-plein-app <naam>"); process.exit(1); }

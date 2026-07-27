@@ -4,7 +4,12 @@
   "type": "module",
   "license": "MIT",
   "main": "src/index.ts",
-  "bin": { "create-plein-app": "./src/cli.ts" },
-  "files": ["src", "template"],
-  "dependencies": { "ajv": "^8.16.0", "ajv-formats": "^3.0.0" }
+  "bin": { "create-plein-app": "./dist/create-plein-app.mjs" },
+  "files": ["src", "template", "dist"],
+  "scripts": {
+    "build:cli": "esbuild src/cli.ts --bundle --platform=node --format=esm --banner:js='#!/usr/bin/env node' --outfile=dist/create-plein-app.mjs",
+    "prepare": "pnpm run build:cli"
+  },
+  "dependencies": { "ajv": "^8.16.0", "ajv-formats": "^3.0.0" },
+  "devDependencies": { "esbuild": "^0.21" }
 }
