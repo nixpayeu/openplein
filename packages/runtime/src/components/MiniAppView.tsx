@@ -18,19 +18,21 @@ export function MiniAppView(props: {
     const frame = iframeRef.current;
     if (!frame?.contentWindow) return;
     const identity = identityProvider(() => props.session);
+    const abort = new AbortController();
     const host = new PleinHost({
       manifest: props.app,
       source: frame.contentWindow,
       gate: (_appId, p) => props.gate(props.app, p),
       providers: {
-        pay: (appId, params) => paymentsProvider.pay(appId, params, props.session.token),
+        pay: (appId, params) =>
+          paymentsProvider.pay(appId, params, props.session.token, abort.signal),
         identityRequest: (appId) => identity.request(appId),
         storageGet: (appId, key) => storageProvider.get(appId, key),
         storageSet: (appId, key, value) => storageProvider.set(appId, key, value),
       },
     });
     host.start();
-    return () => host.stop();
+    return () => { host.stop(); abort.abort(); };
   }, [props.app, props.session, props.gate]);
 
   return (

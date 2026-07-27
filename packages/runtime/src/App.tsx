@@ -6,6 +6,7 @@ import { HomeScreen } from "./components/HomeScreen";
 import { MiniAppView } from "./components/MiniAppView";
 import { PermissionDialog } from "./components/PermissionDialog";
 import { LoginView } from "./components/LoginView";
+import { t } from "./i18n";
 
 export interface Session { email: string; token: string }
 const permissionStore = new PermissionStore();
@@ -22,9 +23,19 @@ export function App() {
   });
   const [active, setActive] = useState<PleinManifest | null>(null);
   const [permReq, setPermReq] = useState<PermissionRequest | null>(null);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
 
   useEffect(() => {
     void loadCatalog().then(setCatalog).catch((e) => console.warn("Catalogus laden mislukt:", e));
+  }, []);
+
+  useEffect(() => {
+    const onCheckout = (e: Event) => {
+      const detail = (e as CustomEvent<{ checkoutUrl: string }>).detail;
+      setCheckoutUrl(detail.checkoutUrl);
+    };
+    window.addEventListener("plein:checkout", onCheckout);
+    return () => window.removeEventListener("plein:checkout", onCheckout);
   }, []);
 
   const gate = useCallback(async (app: PleinManifest, permission: Permission) => {
@@ -64,6 +75,22 @@ export function App() {
           appName={permReq.app.name} permission={permReq.permission}
           onAnswer={answerPermission}
         />
+      )}
+      {checkoutUrl && (
+        <div className="dialog-backdrop" role="dialog" aria-modal="true">
+          <div className="dialog">
+            <h3>{t("checkout.title")}</h3>
+            <div className="dialog-actions">
+              <button onClick={() => setCheckoutUrl(null)}>{t("miniapp.close")}</button>
+              <a
+                className="primary" href={checkoutUrl} target="_blank" rel="noopener noreferrer"
+                onClick={() => setCheckoutUrl(null)}
+              >
+                {t("checkout.open")}
+              </a>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

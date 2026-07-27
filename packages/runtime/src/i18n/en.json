@@ -6,5 +6,6 @@
   "perm.allow": "Allow", "perm.deny": "Deny",
   "perm.payments": "payments", "perm.identity": "your identity (email address)",
   "perm.storage": "storage in this app", "perm.notifications": "notifications",
-  "miniapp.close": "Close", "miniapp.by": "by {provider}"
+  "miniapp.close": "Close", "miniapp.by": "by {provider}",
+  "checkout.title": "Payment waiting", "checkout.open": "Open the payment page"
 }

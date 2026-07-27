@@ -6,5 +6,6 @@
   "perm.allow": "Toestaan", "perm.deny": "Weigeren",
   "perm.payments": "betalingen", "perm.identity": "je identiteit (e-mailadres)",
   "perm.storage": "opslag in deze app", "perm.notifications": "meldingen",
-  "miniapp.close": "Sluiten", "miniapp.by": "door {provider}"
+  "miniapp.close": "Sluiten", "miniapp.by": "door {provider}",
+  "checkout.title": "Betaling wacht", "checkout.open": "Open de betaalpagina"
 }

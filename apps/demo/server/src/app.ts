@@ -1,12 +1,18 @@
 import { Hono } from "hono";
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 
-interface Options { authSecret: string; paymentsMock: boolean; mollieApiKey?: string; publicUrl?: string }
+interface Options {
+  authSecret: string; paymentsMock: boolean; mollieApiKey?: string; publicUrl?: string;
+  tokenTtlMs?: number;
+}
 
 type App = Hono & { debugLastCode?: string };
 
+const DEFAULT_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+
 export function createApp(opts: Options): App {
   const app = new Hono() as App;
+  const tokenTtlMs = opts.tokenTtlMs ?? DEFAULT_TOKEN_TTL_MS;
   const codes = new Map<string, { code: string; expires: number }>();
   const mockPayments = new Map<string, { polls: number }>();
 
@@ -20,14 +26,20 @@ export function createApp(opts: Options): App {
     const [payload, mac] = token.split(".");
     if (!payload || !mac) return false;
     const expected = createHmac("sha256", opts.authSecret).update(payload).digest("base64url");
-    try { return timingSafeEqual(Buffer.from(mac), Buffer.from(expected)); }
+    let valid: boolean;
+    try { valid = timingSafeEqual(Buffer.from(mac), Buffer.from(expected)); }
     catch { return false; }
+    if (!valid) return false;
+    const decoded = Buffer.from(payload, "base64url").toString();
+    const ts = Number(decoded.slice(decoded.lastIndexOf("|") + 1));
+    if (!Number.isFinite(ts) || Date.now() - ts > tokenTtlMs) return false;
+    return true;
   };
 
   app.post("/api/auth/request-code", async (c) => {
     const { email } = await c.req.json<{ email: string }>();
     if (!email?.includes("@")) return c.body(null, 400);
-    const code = String(randomInt(100000, 999999));
+    const code = String(randomInt(100000, 1000000));
     codes.set(email, { code, expires: Date.now() + 10 * 60_000 });
     app.debugLastCode = code;
     console.log(`[plein-auth] code voor ${email}: ${code}`);
@@ -44,11 +56,6 @@ export function createApp(opts: Options): App {
   });
 
   app.use("/api/payments/*", async (c, next) => {
-    const auth = c.req.header("Authorization");
-    if (!verifyToken(auth?.replace(/^Bearer /, ""))) return c.body(null, 401);
-    await next();
-  });
-  app.use("/api/payments", async (c, next) => {
     const auth = c.req.header("Authorization");
     if (!verifyToken(auth?.replace(/^Bearer /, ""))) return c.body(null, 401);
     await next();

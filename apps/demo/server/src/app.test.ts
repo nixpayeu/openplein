@@ -47,3 +47,23 @@ describe("payments (mock)", () => {
     expect(((await poll.json()) as { status: string }).status).toBe("paid");
   });
 });
+
+describe("token-TTL", () => {
+  it("weigert een verlopen token", async () => {
+    const expiredApp = createApp({ authSecret: "test-secret", paymentsMock: true, tokenTtlMs: -1 });
+    await expiredApp.request("/api/auth/request-code", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "nick@example.nl" }),
+    });
+    const code = expiredApp.debugLastCode!;
+    const verifyRes = await expiredApp.request("/api/auth/verify", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "nick@example.nl", code }),
+    });
+    const expiredToken = ((await verifyRes.json()) as { token: string }).token;
+    const res = await expiredApp.request("/api/payments/x", {
+      headers: { Authorization: `Bearer ${expiredToken}` },
+    });
+    expect(res.status).toBe(401);
+  });
+});
