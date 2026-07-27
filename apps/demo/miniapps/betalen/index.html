@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="nl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Betaal-demo</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 1rem; }
+  button { margin: .25rem; }
+</style></head>
+<body>
+  <h1>☕ Steun het Plein</h1>
+  <p>Demo-betaling via Nixpay (Mollie-testmodus).</p>
+  <button id="pay" data-amount="2.50">Doneer € 2,50</button>
+  <button id="pay10" data-amount="10.00">Doneer € 10,00</button>
+  <p id="status"></p>
+  <script src="plein-client.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
