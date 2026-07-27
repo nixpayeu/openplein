@@ -1,0 +1,12 @@
+{
+  "name": "@openplein/bridge",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "main": "src/index.ts",
+  "scripts": {
+    "build:client": "esbuild src/client.ts --bundle --format=iife --global-name=PleinBridge --outfile=dist/plein-client.js"
+  },
+  "dependencies": { "@openplein/sdk": "workspace:*" },
+  "devDependencies": { "esbuild": "^0.21" }
+}

@@ -159,3 +159,16 @@ marktplaats met aanbieder-onboarding, native SDK's.
 - Concrete invulling van de betaal-demo (welk "doel" of welke voorbeeld-shop).
 - Tech-stack-details (framework voor de shell, monorepo-tooling) — keuze in het
   implementatieplan.
+
+## Afwijkingen tijdens implementatie
+
+- CSP niet technisch afgedwongen in fase 0 (listing-eis, geen handhaving in
+  dev); wel een CSP-header op `/miniapps/*` in productie.
+- Storage-keyformaat is `appId:key` (namespacing per mini-app in dezelfde
+  `localStorage`).
+- Token-TTL is 24 uur (`DEFAULT_TOKEN_TTL_MS`), niet oneindig geldig.
+- `dispose()`/source-check-hardening op de bridge (afgeschermde/verlopen
+  message-listeners na het sluiten van een mini-app).
+- `INVALID_PARAMS`-foutcode toegevoegd aan de bridge-foutafhandeling.
+- Checkout-fallback-banner wanneer een betaalpoging niet automatisch kan
+  doorschakelen naar de Mollie-checkout.

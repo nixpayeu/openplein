@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["id", "name", "version", "icon", "entry", "provider", "permissions"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(\\.[a-z0-9-]+)+$" },
+    "name": { "type": "string", "minLength": 1 },
+    "version": { "type": "string" },
+    "icon": { "type": "string" },
+    "entry": { "type": "string", "format": "uri" },
+    "provider": {
+      "type": "object", "required": ["name", "url"],
+      "properties": { "name": { "type": "string" }, "url": { "type": "string" } }
+    },
+    "permissions": {
+      "type": "array",
+      "items": { "enum": ["payments", "identity", "storage", "notifications"] }
+    }
+  }
+}
