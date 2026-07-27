@@ -1,0 +1,10 @@
+{
+  "home.title": "Plein", "home.discover": "Discover", "home.installed": "Your mini-apps",
+  "login.title": "Sign in to Plein", "login.email": "Email address", "login.code": "Code from your email",
+  "login.sendCode": "Send code", "login.verify": "Sign in", "login.error": "Sign-in failed",
+  "perm.title": "Permission requested", "perm.body": "{app} requests access to: {permission}",
+  "perm.allow": "Allow", "perm.deny": "Deny",
+  "perm.payments": "payments", "perm.identity": "your identity (email address)",
+  "perm.storage": "storage in this app", "perm.notifications": "notifications",
+  "miniapp.close": "Close", "miniapp.by": "by {provider}"
+}

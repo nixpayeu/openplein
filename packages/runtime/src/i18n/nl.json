@@ -1,0 +1,10 @@
+{
+  "home.title": "Plein", "home.discover": "Ontdekken", "home.installed": "Jouw mini-apps",
+  "login.title": "Inloggen bij Plein", "login.email": "E-mailadres", "login.code": "Code uit je mail",
+  "login.sendCode": "Stuur code", "login.verify": "Inloggen", "login.error": "Inloggen mislukt",
+  "perm.title": "Toestemming gevraagd", "perm.body": "{app} vraagt toegang tot: {permission}",
+  "perm.allow": "Toestaan", "perm.deny": "Weigeren",
+  "perm.payments": "betalingen", "perm.identity": "je identiteit (e-mailadres)",
+  "perm.storage": "opslag in deze app", "perm.notifications": "meldingen",
+  "miniapp.close": "Sluiten", "miniapp.by": "door {provider}"
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "nl.easeo.lijstje", "name": "Lijstje", "version": "0.1.0",
+    "icon": "http://localhost:5180/icon.svg", "entry": "http://localhost:5180/",
+    "provider": { "name": "EASEO", "url": "https://easeo.nl" },
+    "permissions": ["identity", "storage"]
+  },
+  {
+    "id": "nl.nixpay.betalen", "name": "Betaal-demo", "version": "0.1.0",
+    "icon": "http://localhost:5181/icon.svg", "entry": "http://localhost:5181/",
+    "provider": { "name": "Nixpay", "url": "https://nixpay.eu" },
+    "permissions": ["payments", "identity"]
+  }
+]
