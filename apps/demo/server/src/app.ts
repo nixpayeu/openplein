@@ -1,9 +1,19 @@
 import { Hono } from "hono";
+import { serveStatic } from "@hono/node-server/serve-static";
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 
 interface Options {
   authSecret: string; paymentsMock: boolean; mollieApiKey?: string; publicUrl?: string;
   tokenTtlMs?: number;
+  /**
+   * Productie-only: serveert de gebouwde runtime-dist op "/" en de twee
+   * mini-apps op /miniapps/lijstje en /miniapps/betalen (paden relatief aan
+   * de cwd waarmee `pnpm --filter @openplein/demo-server start` draait,
+   * d.w.z. `apps/demo/server`). Staat standaard uit zodat dev (`pnpm dev`,
+   * losse mini-app-servers op :5180/:5181) en de tests (dist/ bestaat daar
+   * niet) ongewijzigd blijven; in het Docker-image staat SERVE_STATIC=1.
+   */
+  serveStaticAssets?: boolean;
 }
 
 type App = Hono & { debugLastCode?: string };
@@ -96,6 +106,25 @@ export function createApp(opts: Options): App {
     const payment = await mollie.payments.get(id);
     return c.json({ status: payment.status });
   });
+
+  if (opts.serveStaticAssets) {
+    app.use(
+      "/miniapps/lijstje/*",
+      serveStatic({
+        root: "../miniapps/lijstje",
+        rewriteRequestPath: (path) => path.replace(/^\/miniapps\/lijstje/, ""),
+      }),
+    );
+    app.use(
+      "/miniapps/betalen/*",
+      serveStatic({
+        root: "../miniapps/betalen",
+        rewriteRequestPath: (path) => path.replace(/^\/miniapps\/betalen/, ""),
+      }),
+    );
+    // Vangt alles wat niet door /api of /miniapps is afgehandeld: runtime-dist op "/".
+    app.use("/*", serveStatic({ root: "../../../packages/runtime/dist" }));
+  }
 
   return app;
 }
