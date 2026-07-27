@@ -41,7 +41,7 @@ flowchart LR
     subgraph MiniApp["Mini-app (eigen origin)"]
         App["plein.manifest.json + HTML/JS/CSS"]
     end
-    Bridge["packages/bridge — postMessage RPC\n(window.plein in de mini-app)"]
+    Bridge["packages/bridge — postMessage RPC\n(window.PleinBridge in de mini-app)"]
     subgraph Providers["Providers (verwisselbaar)"]
         Payments["payments → Nixpay / Mollie"]
         Identity["identity → magic-link e-mail\n(EUDI-wallet: roadmap)"]
@@ -49,7 +49,7 @@ flowchart LR
     end
     Server["apps/demo/server — Hono-backend\nauth + betalingen"]
 
-    App <-- "window.plein.pay() / .identity / .storage" --> Bridge
+    App <-- "PleinBridge.createPleinClient().pay() / .identity / .storage" --> Bridge
     Bridge <--> Shell
     MiniAppView --> App
     Shell --> Providers

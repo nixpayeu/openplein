@@ -174,11 +174,14 @@ van te blijven hangen.
 
 ## 4. Sandbox-eisen
 
-- Elke mini-app draait in een `<iframe>` met `sandbox="allow-scripts"` —
-  **zonder** `allow-same-origin`. Dat geeft de iframe een opake ("null")
-  origin: geen toegang tot de shell-DOM, geen toegang tot de
+- Elke mini-app draait in een `<iframe>` met
+  `sandbox="allow-scripts allow-forms"` (`MiniAppView.tsx`) — **zonder**
+  `allow-same-origin`. Dat geeft de iframe een opake ("null") origin: geen
+  toegang tot de shell-DOM, geen toegang tot de
   `localStorage`/`sessionStorage`/cookies van de shell, ook niet tot zijn
-  eigen origin buiten de iframe.
+  eigen origin buiten de iframe. `allow-forms` staat toe dat gewone
+  HTML-formulieren (zoals in de `lijstje`-demo) binnen de iframe blijven
+  werken; dat verandert niets aan de origin-isolatie.
 - Alle netwerkverkeer van een mini-app (assets, API-calls) gaat naar de
   **eigen origin van de aanbieder** — de origin van `manifest.entry`. De
   bridge is het enige communicatiekanaal terug naar de shell of naar

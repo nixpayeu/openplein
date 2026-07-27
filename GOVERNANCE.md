@@ -34,7 +34,8 @@ Kies de licentie van het package dat je aanraakt: AGPL-3.0-only voor
 Tot het project structureel groeit in aantal actieve bijdragers beslist de
 maintainer (Nixpay B.V. namens SAIG). Voor breaking changes aan het
 mini-app-manifest (`packages/sdk/src/schema.json`) of aan de bridge-RPC
-(`packages/bridge/src/protocol.ts` en de publieke `window.plein`-API) geldt
+(`packages/bridge/src/protocol.ts` en de publieke `PleinBridge`-client-API,
+`window.PleinBridge` / `PleinBridge.createPleinClient()`) geldt
 een lichte RFC-procedure: open een issue met het label `rfc`, beschrijf de
 voorgestelde wijziging en de impact op bestaande mini-apps, en geef
 minimaal enkele dagen ruimte voor reactie voordat de maintainer besluit.
