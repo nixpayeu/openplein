@@ -182,10 +182,24 @@ van te blijven hangen.
   eigen origin buiten de iframe. `allow-forms` staat toe dat gewone
   HTML-formulieren (zoals in de `lijstje`-demo) binnen de iframe blijven
   werken; dat verandert niets aan de origin-isolatie.
-- Alle netwerkverkeer van een mini-app (assets, API-calls) gaat naar de
-  **eigen origin van de aanbieder** — de origin van `manifest.entry`. De
-  bridge is het enige communicatiekanaal terug naar de shell of naar
-  shell-backends (betalen, identity).
+- Alle netwerkverkeer van een mini-app (assets, API-calls) hoort naar de
+  **eigen origin van de aanbieder** te gaan — de origin van `manifest.entry`
+  — met de bridge als enige communicatiekanaal terug naar de shell of naar
+  shell-backends (betalen, identity). In fase 0 is dit een **listing-eis**
+  (mini-apps die zich hier niet aan houden, worden niet in de catalogus
+  opgenomen): de dev-opstelling handhaaft dit nog niet technisch. Technische
+  handhaving via CSP/registry volgt in fase 2 (zie §5 Roadmap). Eén uitzondering
+  nu al: de productieserver stuurt wél een CSP-header mee op `/miniapps/*`
+  (volgende bullet) — dat dekt alleen de gebundelde demo-mini-apps van dit
+  project, niet een toekomstige registry van externe aanbieders.
+- De productieserver (`apps/demo/server/src/app.ts`, `SERVE_STATIC=1`) zet op
+  elke `/miniapps/*`-response de header
+  `Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:`.
+  De twee demo-mini-apps gebruiken alleen een inline `<style>`-blok en lokale
+  scripts (`plein-client.js`, `app.js`) zonder externe requests of `eval`, dus
+  ze blijven onder deze policy functioneren (geverifieerd via statische
+  code-inspectie van `apps/demo/miniapps/*/index.html` en `app.js`, niet via
+  een browserrun).
 - De host accepteert bridge-berichten alleen van het verwachte iframe-
   `Window`-object én van de verwachte origin: `event.origin` moet gelijk
   zijn aan het origin van `manifest.entry`, met een expliciete uitzondering

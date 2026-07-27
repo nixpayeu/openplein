@@ -2,9 +2,11 @@
   "name": "openplein",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@11.5.0",
+  "engines": { "node": ">=20" },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc -b"
+    "typecheck": "pnpm --filter @openplein/sdk --filter @openplein/bridge --filter @openplein/runtime --filter @openplein/demo-server exec tsc --noEmit -p ."
   },
   "devDependencies": {
     "typescript": "^5.5.0",

@@ -23,8 +23,10 @@ const DEFAULT_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 export function createApp(opts: Options): App {
   const app = new Hono() as App;
   const tokenTtlMs = opts.tokenTtlMs ?? DEFAULT_TOKEN_TTL_MS;
-  const codes = new Map<string, { code: string; expires: number }>();
+  const codes = new Map<string, { code: string; expires: number; attempts: number }>();
   const mockPayments = new Map<string, { polls: number }>();
+  const MAX_VERIFY_ATTEMPTS = 5;
+  const MAX_MOCK_PAYMENTS = 1000;
 
   const sign = (email: string, ts: number) => {
     const payload = Buffer.from(`${email}|${ts}`).toString("base64url");
@@ -49,8 +51,12 @@ export function createApp(opts: Options): App {
   app.post("/api/auth/request-code", async (c) => {
     const { email } = await c.req.json<{ email: string }>();
     if (!email?.includes("@")) return c.body(null, 400);
+    const now = Date.now();
+    // Ruim vervallen codes op vóór het zetten van een nieuwe (goedkope,
+    // opportunistische opschoning i.p.v. een aparte cron/timer).
+    for (const [key, entry] of codes) if (entry.expires < now) codes.delete(key);
     const code = String(randomInt(100000, 1000000));
-    codes.set(email, { code, expires: Date.now() + 10 * 60_000 });
+    codes.set(email, { code, expires: now + 10 * 60_000, attempts: 0 });
     app.debugLastCode = code;
     console.log(`[plein-auth] code voor ${email}: ${code}`);
     // optioneel: SMTP_URL → nodemailer.sendMail; stdout blijft de primaire MVP-flow
@@ -64,7 +70,16 @@ export function createApp(opts: Options): App {
   app.post("/api/auth/verify", async (c) => {
     const { email, code } = await c.req.json<{ email: string; code: string }>();
     const entry = codes.get(email);
-    if (!entry || entry.expires < Date.now() || entry.code !== code) return c.body(null, 401);
+    if (!entry || entry.expires < Date.now()) return c.body(null, 401);
+    if (entry.code !== code) {
+      entry.attempts++;
+      // Na MAX_VERIFY_ATTEMPTS foute pogingen: code weggooien. Een volgende
+      // verify (zelfs met de juiste code) faalt dan met 401 tot de gebruiker
+      // een nieuwe code aanvraagt — brute-force op de 6-cijferige code kost
+      // zo hooguit 5 gokken per aangevraagde code.
+      if (entry.attempts >= MAX_VERIFY_ATTEMPTS) codes.delete(email);
+      return c.body(null, 401);
+    }
     codes.delete(email);
     return c.json({ token: sign(email, Date.now()) });
   });
@@ -80,6 +95,12 @@ export function createApp(opts: Options): App {
     if (opts.paymentsMock) {
       const id = `mock_${Date.now()}`;
       mockPayments.set(id, { polls: 0 });
+      // Simpele cap i.p.v. TTL-opschoning: mock-betalingen zijn alleen voor
+      // demo/dev, dus oudste entries laten vallen boven de grens volstaat.
+      if (mockPayments.size > MAX_MOCK_PAYMENTS) {
+        const oldest = mockPayments.keys().next().value;
+        if (oldest !== undefined) mockPayments.delete(oldest);
+      }
       return c.json({ id, checkoutUrl: `/mock-checkout?id=${id}` });
     }
     const { createMollieClient } = await import("@mollie/api-client");
@@ -108,6 +129,20 @@ export function createApp(opts: Options): App {
   });
 
   if (opts.serveStaticAssets) {
+    // CSP op /miniapps/*: de demo mini-apps gebruiken alleen een inline
+    // <style>-blok en lokale scripts (plein-client.js, app.js) — geen
+    // externe requests, geen eval. style-src staat 'unsafe-inline' toe voor
+    // dat <style>-blok; img-src staat data: toe (iconen kunnen als data-URI
+    // ingeladen worden). Technische handhaving van de "eigen origin"-regel
+    // uit §4 van docs/miniapp-spec.md; volledige mini-app-registry-
+    // handhaving is fase 2.
+    app.use("/miniapps/*", async (c, next) => {
+      await next();
+      c.header(
+        "Content-Security-Policy",
+        "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:",
+      );
+    });
     app.use(
       "/miniapps/lijstje/*",
       serveStatic({

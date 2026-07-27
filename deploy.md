@@ -62,7 +62,12 @@ chmod 600 .env
 ```
 
 `MOLLIE_API_KEY` is een **Mollie-testkey** (`test_...`) — géén live-key.
-`.env` wordt nooit gecommit (staat in `.gitignore`).
+`.env` wordt nooit gecommit (staat in `.gitignore`). Ontbreekt `.env` op de
+VPS (bijv. `docker compose` zonder `.env`-bestand), dan geeft Docker Compose
+`AUTH_SECRET=""` door; de server herkent een lege waarde en weigert te
+starten (`process.exit(1)`) in plaats van door te draaien met een lege
+HMAC-sleutel — check `docker compose logs openplein` als de container direct
+stopt na `up`.
 
 ## 3. Build + start
 

@@ -19,7 +19,15 @@ export function App() {
   const [catalog, setCatalog] = useState<PleinManifest[]>([]);
   const [session, setSession] = useState<Session | null>(() => {
     const raw = localStorage.getItem("plein.session");
-    return raw ? (JSON.parse(raw) as Session) : null;
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as Session;
+    } catch {
+      // Corrupte/onleesbare localStorage-waarde mag de shell niet bricken:
+      // opruimen en gewoon uitgelogd starten.
+      localStorage.removeItem("plein.session");
+      return null;
+    }
   });
   const [active, setActive] = useState<PleinManifest | null>(null);
   const [permReq, setPermReq] = useState<PermissionRequest | null>(null);

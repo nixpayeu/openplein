@@ -48,6 +48,29 @@ describe("payments (mock)", () => {
   });
 });
 
+describe("brute-force-guard", () => {
+  it("blokkeert na 5 foute pogingen", async () => {
+    const guardApp = createApp({ authSecret: "test-secret", paymentsMock: true });
+    await guardApp.request("/api/auth/request-code", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "brute@example.nl" }),
+    });
+    const correctCode = guardApp.debugLastCode!;
+    for (let i = 0; i < 5; i++) {
+      const res = await guardApp.request("/api/auth/verify", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "brute@example.nl", code: "000000" }),
+      });
+      expect(res.status).toBe(401);
+    }
+    const res = await guardApp.request("/api/auth/verify", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "brute@example.nl", code: correctCode }),
+    });
+    expect(res.status).toBe(401);
+  });
+});
+
 describe("token-TTL", () => {
   it("weigert een verlopen token", async () => {
     const expiredApp = createApp({ authSecret: "test-secret", paymentsMock: true, tokenTtlMs: -1 });
