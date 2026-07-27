@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.5.0",
-  "engines": { "node": ">=20" },
+  "engines": { "node": ">=22.13" },
   "scripts": {
     "test": "vitest run",
     "typecheck": "pnpm --filter @openplein/sdk --filter @openplein/bridge --filter @openplein/runtime --filter @openplein/demo-server exec tsc --noEmit -p ."
