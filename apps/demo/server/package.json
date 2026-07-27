@@ -1,0 +1,14 @@
+{
+  "name": "@openplein/demo-server",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": { "dev": "tsx watch src/index.ts", "start": "tsx src/index.ts" },
+  "dependencies": {
+    "hono": "^4.4.0",
+    "@hono/node-server": "^1.11.0",
+    "@mollie/api-client": "^3.7.0",
+    "nodemailer": "^6.9.0"
+  },
+  "devDependencies": { "tsx": "^4.15.0", "@types/nodemailer": "^6.4.0", "vitest": "^2.0.0" }
+}
