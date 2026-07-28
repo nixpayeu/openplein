@@ -10,7 +10,7 @@ export default defineConfig({
       manifest: {
         name: "Plein", short_name: "Plein",
         description: "Jouw diensten, één Plein",
-        theme_color: "#1a3c6e", background_color: "#ffffff", display: "standalone",
+        theme_color: "#070F1C", background_color: "#070F1C", display: "standalone",
         icons: [{ src: "icon-512.png", sizes: "512x512", type: "image/png" }],
       },
     }),

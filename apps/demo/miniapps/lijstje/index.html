@@ -3,8 +3,24 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lijstje</title>
 <style>
-  body { font-family: system-ui, sans-serif; margin: 1rem; }
-  li button { margin-left: .5rem; }
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 1.5rem 1.25rem;
+    background: #0D1B2A; color: #C8D8E8; min-height: 100vh; box-sizing: border-box; }
+  h1 { color: #F4F8FC; font-size: 1.5rem; margin: 0 0 .6rem; }
+  #wie { color: #4D8FCC; font-size: .9rem; }
+  #status { color: #FFB800; font-size: .85rem; }
+  #f { display: flex; gap: .5rem; margin: 1rem 0; }
+  #item { flex: 1; padding: .6rem .8rem; font-size: 1rem; border: 1px solid rgba(200,216,232,.2);
+    border-radius: 8px; background: #04080F; color: #F4F8FC; }
+  #item:focus { outline: none; border-color: #06D6A0; }
+  #f button { background: #0D5C8F; color: #F4F8FC; border: 0; border-radius: 8px;
+    padding: .6rem 1rem; font-size: 1.1rem; cursor: pointer; }
+  ul { list-style: none; padding: 0; margin: 0; }
+  li { display: flex; align-items: center; justify-content: space-between;
+    background: #12263C; border: 1px solid rgba(200,216,232,.14); border-radius: 8px;
+    padding: .55rem .8rem; margin: .4rem 0; color: #F4F8FC; }
+  li button { background: transparent; color: #4D8FCC; border: 0; font-size: 1rem;
+    cursor: pointer; padding: 0 .2rem; }
+  li button:hover { color: #ff7a6b; }
 </style></head>
 <body>
   <h1>🛒 Lijstje</h1>
