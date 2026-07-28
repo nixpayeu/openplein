@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenPlein — jouw diensten, één plein</title>
+<meta name="description" content="OpenPlein is een open-source mini-app-platform voor Nederland en Europa: één soevereine app waarin diensten als mini-apps draaien. Een initiatief van Sovereign AI Grid.">
+<link rel="stylesheet" href="/fonts/archivo.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%231a3c6e'/%3E%3Crect x='10' y='10' width='80' height='80' rx='10' fill='none' stroke='white' stroke-width='5'/%3E%3Ctext x='50' y='66' font-size='44' font-family='sans-serif' font-weight='800' fill='white' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --blauw:#1a3c6e; --blauw-diep:#122c52;
+  --tegel:#e7e5e0; --voeg:#d8d5cd; --tegel-licht:#efeeea;
+  --ink:#20242b; --ink-zacht:#5a6070; --wit:#fdfdfb;
+  --klinker:#a8502f;
+  --display:"Archivo",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:ui-monospace,"Cascadia Code","Source Code Pro",Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--body);color:var(--ink);background:var(--tegel);line-height:1.6}
+::selection{background:var(--blauw);color:var(--wit)}
+a{color:var(--blauw)}
+.wrap{max-width:1060px;margin:0 auto;padding:0 1.25rem}
+
+/* ── Hero: het straatnaambord ─────────────────────────── */
+.hero{padding:4.5rem 0 3rem;text-align:center;
+  background:
+    linear-gradient(rgba(231,229,224,0) 60%, var(--tegel)),
+    repeating-linear-gradient(0deg, var(--voeg) 0 1px, transparent 1px 72px),
+    repeating-linear-gradient(90deg, var(--voeg) 0 1px, transparent 1px 72px),
+    var(--tegel-licht);}
+.bord{display:inline-block;background:var(--blauw);color:#fff;border-radius:14px;
+  padding:1.1rem 2.2rem 1.25rem;box-shadow:inset 0 0 0 4px var(--blauw),inset 0 0 0 7px #fff,
+  0 10px 30px rgba(18,44,82,.28);}
+.bord h1{font-family:var(--display);font-weight:800;text-transform:uppercase;
+  font-size:clamp(2.6rem,9vw,5.2rem);letter-spacing:.04em;line-height:1.05}
+.bord .gemeente{display:block;font-family:var(--display);font-weight:500;font-size:clamp(.7rem,1.8vw,.95rem);
+  letter-spacing:.28em;text-transform:uppercase;opacity:.85;margin-top:.35rem}
+.tagline{margin:1.6rem auto .4rem;font-size:clamp(1.1rem,2.6vw,1.45rem);max-width:34ch;font-weight:500}
+.hero p.sub{color:var(--ink-zacht);max-width:52ch;margin:0 auto}
+.cta-rij{margin-top:1.8rem;display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap}
+.knop{display:inline-block;padding:.7rem 1.4rem;border-radius:10px;text-decoration:none;font-weight:600;
+  transition:transform .12s ease, box-shadow .12s ease}
+.knop:focus-visible{outline:3px solid var(--klinker);outline-offset:2px}
+.knop.primair{background:var(--blauw);color:#fff;box-shadow:0 4px 14px rgba(18,44,82,.25)}
+.knop.primair:hover{transform:translateY(-2px)}
+.knop.stil{background:transparent;color:var(--blauw);box-shadow:inset 0 0 0 2px var(--blauw)}
+.knop.stil:hover{background:rgba(26,60,110,.07)}
+
+/* ── Het plein: stoeptegels met kramen ────────────────── */
+.plein{padding:3rem 0 1rem}
+.plein-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;background:var(--voeg);
+  border:5px solid var(--voeg);border-radius:8px;overflow:hidden}
+.t{aspect-ratio:1;background:var(--tegel-licht);display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:.15rem;min-width:0}
+.t.kraam{background:#fff;cursor:default;transition:transform .15s ease,box-shadow .15s ease}
+.t.kraam:hover{transform:translateY(-3px);box-shadow:0 8px 18px rgba(18,44,82,.18);position:relative;z-index:1}
+.t .emoji{font-size:clamp(1.1rem,3.5vw,1.9rem)}
+.t .naam{font-family:var(--mono);font-size:clamp(.5rem,1.3vw,.72rem);color:var(--ink-zacht);
+  white-space:nowrap;overflow:hidden;max-width:95%;text-overflow:ellipsis}
+.t.vrij{background:var(--tegel-licht)}
+.t.jouw{background:transparent;border:2px dashed var(--klinker);border-radius:6px;margin:6px}
+.t.jouw .naam{color:var(--klinker);font-weight:600;white-space:normal;text-align:center;line-height:1.25}
+.plein-onderschrift{text-align:center;color:var(--ink-zacht);font-size:.9rem;margin-top:.8rem}
+
+/* ── Secties ──────────────────────────────────────────── */
+section.blok{padding:3.2rem 0}
+.eyebrow{font-family:var(--mono);font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--klinker);margin-bottom:.5rem}
+h2{font-family:var(--display);font-weight:800;font-size:clamp(1.6rem,4vw,2.3rem);line-height:1.15;margin-bottom:1rem}
+.kolommen{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.2rem;margin-top:1.6rem}
+.kaart{background:#fff;border-radius:12px;padding:1.4rem;box-shadow:0 2px 10px rgba(18,44,82,.07)}
+.kaart h3{font-family:var(--display);font-weight:800;font-size:1.05rem;margin-bottom:.5rem;color:var(--blauw)}
+.kaart p{font-size:.95rem;color:var(--ink-zacht)}
+.kaart code{font-family:var(--mono);font-size:.85em;background:var(--tegel);padding:.1em .35em;border-radius:4px}
+
+pre{background:var(--blauw-diep);color:#dbe4f2;font-family:var(--mono);font-size:.88rem;line-height:1.7;
+  padding:1.2rem 1.4rem;border-radius:12px;overflow-x:auto;margin-top:1.4rem}
+pre .c{color:#7e94b8}pre .s{color:#a8d0a2}
+
+.tweeluik{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.2rem;margin-top:1.4rem}
+.lijst{background:#fff;border-radius:12px;padding:1.4rem;box-shadow:0 2px 10px rgba(18,44,82,.07)}
+.lijst h3{font-family:var(--display);font-weight:800;font-size:1rem;margin-bottom:.7rem}
+.lijst ul{list-style:none;padding:0}
+.lijst li{padding:.3rem 0 .3rem 1.6rem;position:relative;font-size:.95rem}
+.lijst.nu li::before{content:"✓";position:absolute;left:0;color:var(--blauw);font-weight:700}
+.lijst.later li::before{content:"◻";position:absolute;left:0;color:var(--klinker)}
+.lijst .noot{font-size:.85rem;color:var(--ink-zacht);margin-top:.8rem}
+
+.bouwstenen{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.2rem}
+.steen{font-family:var(--mono);font-size:.82rem;background:#fff;border-radius:8px;padding:.45rem .8rem;
+  box-shadow:inset 0 0 0 1.5px var(--voeg)}
+.steen b{color:var(--blauw)}
+
+/* ── EN summary ───────────────────────────────────────── */
+.en{background:var(--blauw);color:#fff;border-radius:14px;padding:2rem;margin:1rem 0 0}
+.en .eyebrow{color:#9db8dd}
+.en h2{color:#fff;font-size:1.4rem}
+.en p{color:#d7e1f0;font-size:.97rem;max-width:75ch}
+.en a{color:#fff}
+
+/* ── Footer ───────────────────────────────────────────── */
+footer{background:var(--blauw-diep);color:#b9c6da;padding:2.6rem 0;margin-top:3.5rem;font-size:.9rem}
+footer .wrap{display:flex;flex-wrap:wrap;gap:1.5rem;justify-content:space-between;align-items:flex-start}
+footer a{color:#e6ecf6}
+footer .licenties{font-family:var(--mono);font-size:.78rem}
+
+@media (max-width:640px){
+  .plein-grid{grid-template-columns:repeat(4,1fr)}
+  .t.v-weg{display:none}
+}
+@media (prefers-reduced-motion:no-preference){
+  .bord{animation:plaatsen .5s ease-out}
+  @keyframes plaatsen{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="bord" role="img" aria-label="Straatnaambord met de naam OpenPlein">
+      <h1>OpenPlein</h1>
+      <span class="gemeente">open source · nl / eu</span>
+    </div>
+    <p class="tagline">Jouw diensten, één plein.</p>
+    <p class="sub">Een open-source mini-app-platform: één app waarin Europese diensten als
+    mini-apps draaien — zonder Amerikaans of Chinees platform ertussen.</p>
+    <div class="cta-rij">
+      <a class="knop primair" href="https://plein.sovereignaigrid.nl">Probeer de demo</a>
+      <a class="knop stil" href="#bouwers">Bouw een mini-app</a>
+    </div>
+  </div>
+</header>
+
+<div class="plein wrap" aria-hidden="true">
+  <div class="plein-grid">
+    <div class="t vrij"></div><div class="t vrij v-weg"></div><div class="t kraam"><span class="emoji">🛒</span><span class="naam">lijstje</span></div><div class="t vrij"></div><div class="t vrij v-weg"></div><div class="t kraam"><span class="emoji">☕</span><span class="naam">betalen</span></div><div class="t vrij v-weg"></div><div class="t vrij"></div>
+    <div class="t vrij v-weg"></div><div class="t jouw"><span class="naam">jouw mini-app</span></div><div class="t vrij"></div><div class="t vrij v-weg"></div><div class="t kraam"><span class="emoji">🆔</span><span class="naam">identiteit*</span></div><div class="t vrij"></div><div class="t jouw v-weg"><span class="naam">jouw mini-app</span></div><div class="t vrij"></div>
+  </div>
+  <p class="plein-onderschrift">Het plein van de demo: twee werkende mini-apps, veel lege tegels. * = roadmap.</p>
+</div>
+
+<section class="blok">
+  <div class="wrap">
+    <p class="eyebrow">Wat is OpenPlein</p>
+    <h2>Het WeChat-model, maar soeverein en open source</h2>
+    <p>Grote platforms bundelen diensten in één app — handig, maar je levert je gegevens en je
+    afhankelijkheid in. OpenPlein draait dat om: een open runtime waarin iedere Europese aanbieder
+    een mini-app kan plaatsen, met de gebruiker als baas over elke permissie.</p>
+    <div class="kolommen">
+      <div class="kaart"><h3>De shell</h3><p>Een installeerbare web-app (PWA) met een catalogus van
+        mini-apps, inloggen per e-mail en een permissiedialoog per gevoelige actie — zoals op je telefoon.</p></div>
+      <div class="kaart"><h3>De bridge</h3><p>Mini-apps draaien in een strikte sandbox en praten met de
+        shell via één getypeerde API: <code>pay</code>, <code>identity</code>, <code>storage</code>.
+        Geen permissie? Dan een nette foutmelding, nooit stille toegang.</p></div>
+      <div class="kaart"><h3>Mini-apps</h3><p>Gewone statische web-apps plus een klein manifest.
+        Geen app-store-gatekeeper, geen native code, geen lock-in: wat je bouwt blijft van jou.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="blok" id="bouwers" style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Voor bouwers</p>
+    <h2>Een mini-app is een middag werk</h2>
+    <p>De SDK scaffoldt een werkende mini-app; de bridge-API is drie methodes groot.</p>
+<pre><code><span class="c"># scaffold</span>
+create-plein-app mijnwinkel
+
+<span class="c">// betalen vanuit je mini-app</span>
+const plein = PleinBridge.createPleinClient();
+await plein.pay({ amount: <span class="s">"2.50"</span>, currency: <span class="s">"EUR"</span>, description: <span class="s">"Koffie"</span> });</code></pre>
+    <p style="margin-top:1rem;font-size:.92rem;color:var(--ink-zacht)">De volledige mini-app-specificatie
+    (manifest, permissies, sandbox-eisen) staat in de repository en verschijnt hier zodra de code publiek is.</p>
+  </div>
+</section>
+
+<section class="blok" style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Soevereiniteit</p>
+    <h2>Gebouwd op Europese bouwstenen</h2>
+    <p>OpenPlein bouwt zelf alleen de dunne laag die nog niet bestond — de runtime en de bridge.
+    De rest zijn verwisselbare Europese componenten:</p>
+    <div class="bouwstenen">
+      <span class="steen"><b>betalen</b> → Nixpay / Mollie</span>
+      <span class="steen"><b>identiteit</b> → EUDI-wallet (eIDAS 2.0, roadmap)</span>
+      <span class="steen"><b>messaging</b> → Matrix (roadmap)</span>
+      <span class="steen"><b>licenties</b> → AGPL-3.0 + MIT</span>
+    </div>
+  </div>
+</section>
+
+<section class="blok" style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Status</p>
+    <h2>Wat er nu werkt — en wat nog niet</h2>
+    <div class="tweeluik">
+      <div class="lijst nu">
+        <h3>Werkt vandaag</h3>
+        <ul>
+          <li>Demo-omgeving met twee mini-apps</li>
+          <li>Betalingen in Mollie-testmodus</li>
+          <li>Sandbox + permissiemodel, aantoonbaar getest</li>
+          <li>SDK met <code style="font-family:var(--mono)">create-plein-app</code></li>
+        </ul>
+        <p class="noot">In de demo betaal je met testgeld — er wordt niets afgeschreven.</p>
+      </div>
+      <div class="lijst later">
+        <h3>Op de roadmap</h3>
+        <ul>
+          <li>Echte betalingen en app-store-versies (Capacitor)</li>
+          <li>EUDI-wallet-login en Matrix-messaging</li>
+          <li>Open registry met review-proces voor mini-apps</li>
+          <li>Publieke broncode op GitHub</li>
+        </ul>
+        <p class="noot">Eén eerlijke volgorde: eerst degelijk, dan groot.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="blok" style="padding-top:0">
+  <div class="wrap">
+    <div class="en">
+      <p class="eyebrow">In English</p>
+      <h2>The sovereign super-app runtime for Europe</h2>
+      <p>OpenPlein is an open-source mini-app platform: one installable web app in which European
+      services run as sandboxed mini-apps, behind a typed permission bridge (<span style="font-family:var(--mono)">pay,
+      identity, storage</span>). We build only the thin missing layer and compose European building
+      blocks — Mollie/Nixpay for payments, the EUDI wallet and Matrix on the roadmap. Licensed
+      AGPL-3.0 (runtime, bridge) and MIT (SDK). Try the <a href="https://plein.sovereignaigrid.nl">live demo</a>
+      (test payments only).</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <strong style="color:#fff">OpenPlein</strong><br>
+      Een initiatief van <a href="https://sovereignaigrid.nl">Sovereign AI Grid</a><br>
+      Founding payment provider: <a href="https://nixpay.eu">Nixpay</a>
+    </div>
+    <div class="licenties">
+      runtime + bridge · AGPL-3.0<br>
+      sdk + manifest-schema · MIT<br>
+      © 2026 Nixpay B.V.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
