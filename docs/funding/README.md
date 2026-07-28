@@ -98,8 +98,9 @@ het echte formulier.)*
 
 ## Status
 
-Aanvraag: **nog niet ingediend.** Fase 0 (MVP) is voltooid; dit skelet
-wordt verder ingevuld zodra de eerste aanvraagronde wordt voorbereid. Dit
+Aanvraag: **nog niet ingediend.** Fase 0 (MVP) is voltooid en de volledige
+conceptaanvraag (Engelstalige formulier-antwoorden + budgetvoorstel) staat
+klaar in [`application-2026.md`](application-2026.md). Dit
 bestand evolueert mee met het project (zie de governance- en
 funding-afspraak in [`GOVERNANCE.md`](../../GOVERNANCE.md) en de
 [design spec](../superpowers/specs/2026-07-27-openplein-design.md)).
