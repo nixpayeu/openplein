@@ -17,17 +17,24 @@ export const paymentsProvider = {
     if (!win) {
       window.dispatchEvent(new CustomEvent("plein:checkout", { detail: { checkoutUrl } }));
     }
+    // Zodra de betaling een eindstatus heeft, mag een eventueel getoonde
+    // checkout-fallback-dialoog (App.tsx luistert op plein:checkout-done)
+    // vanzelf sluiten — de gebruiker hoeft er niks meer mee.
+    const done = (result: { status: string }) => {
+      window.dispatchEvent(new CustomEvent("plein:checkout-done"));
+      return result;
+    };
     const deadline = Date.now() + 5 * 60_000;
     while (Date.now() < deadline) {
-      if (signal?.aborted) return { status: "failed" };
+      if (signal?.aborted) return done({ status: "failed" });
       await new Promise((r) => setTimeout(r, 2000));
       const poll = await fetch(`/api/payments/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
         signal,
       });
       const { status } = (await poll.json()) as { status: string };
-      if (status !== "open") return { status: status === "expired" ? "failed" : status };
+      if (status !== "open") return done({ status: status === "expired" ? "failed" : status });
     }
-    return { status: "failed" };
+    return done({ status: "failed" });
   },
 };

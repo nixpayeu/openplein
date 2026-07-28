@@ -42,8 +42,13 @@ export function App() {
       const detail = (e as CustomEvent<{ checkoutUrl: string }>).detail;
       setCheckoutUrl(detail.checkoutUrl);
     };
+    const onCheckoutDone = () => setCheckoutUrl(null);
     window.addEventListener("plein:checkout", onCheckout);
-    return () => window.removeEventListener("plein:checkout", onCheckout);
+    window.addEventListener("plein:checkout-done", onCheckoutDone);
+    return () => {
+      window.removeEventListener("plein:checkout", onCheckout);
+      window.removeEventListener("plein:checkout-done", onCheckoutDone);
+    };
   }, []);
 
   const gate = useCallback(async (app: PleinManifest, permission: Permission) => {
