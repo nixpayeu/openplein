@@ -1,5 +1,11 @@
 # Deploy: plein.sovereignaigrid.nl
 
+> **Rsync-valkuil:** combineer `--delete` altijd met `--exclude .env`, anders
+> wist rsync de server-side `.env` (die staat bewust niet in git):
+> `rsync -az --delete --exclude .env --exclude node_modules --exclude .git ./ nextcloud-vps:/opt/docker/openplein/`
+> De demo draait publiek met `DEMO_SHOW_CODE=1` (inlogcode op het scherm, geen
+> SMTP) — alleen combineren met een Mollie-TESTkey, nooit live.
+
 Deploy-runbook voor OpenPlein op de bestaande Hostinger-VPS
 (`88.222.220.64`, Docker + Caddy, zie `nextcloud-vps` ssh-alias). Volgt het
 bestaande patroon: één docker-compose-service per project onder
