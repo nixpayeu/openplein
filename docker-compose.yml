@@ -7,6 +7,7 @@ services:
       MOLLIE_API_KEY: ${MOLLIE_API_KEY}
       PUBLIC_URL: https://plein.sovereignaigrid.nl
       SERVE_STATIC: "1"
+      DEMO_SHOW_CODE: ${DEMO_SHOW_CODE:-0}
     ports:
       - "127.0.0.1:5175:5175"
     networks: [proxy]

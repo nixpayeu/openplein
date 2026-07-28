@@ -27,6 +27,7 @@ const app = createApp({
   mollieApiKey: process.env.MOLLIE_API_KEY,
   publicUrl: process.env.PUBLIC_URL,
   serveStaticAssets: process.env.SERVE_STATIC === "1",
+  demoShowCode: process.env.DEMO_SHOW_CODE === "1",
 });
 serve({ fetch: app.fetch, port: 5175 });
 console.log("[plein-demo-server] http://localhost:5175");

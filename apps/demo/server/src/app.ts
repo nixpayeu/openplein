@@ -14,6 +14,14 @@ interface Options {
    * niet) ongewijzigd blijven; in het Docker-image staat SERVE_STATIC=1.
    */
   serveStaticAssets?: boolean;
+  /**
+   * Demo-modus zonder SMTP: request-code geeft de inlogcode in de response
+   * terug zodat de bezoeker hem op het scherm ziet. Identiteit is dan bewust
+   * betekenisloos (iedereen kan elk e-mailadres "zijn") — acceptabel zolang
+   * betalingen in de Mollie-TESTomgeving lopen. Nooit combineren met een
+   * live-mode Mollie-key.
+   */
+  demoShowCode?: boolean;
 }
 
 type App = Hono & { debugLastCode?: string };
@@ -60,6 +68,7 @@ export function createApp(opts: Options): App {
     app.debugLastCode = code;
     console.log(`[plein-auth] code voor ${email}: ${code}`);
     // optioneel: SMTP_URL → nodemailer.sendMail; stdout blijft de primaire MVP-flow
+    if (opts.demoShowCode) return c.json({ demoCode: code });
     return c.body(null, 204);
   });
 

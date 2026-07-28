@@ -27,6 +27,32 @@ describe("auth", () => {
   });
 });
 
+describe("demo-modus (demoShowCode)", () => {
+  it("geeft de code in de response terug en die code verifieert", async () => {
+    const demoApp = createApp({ authSecret: "test-secret", paymentsMock: true, demoShowCode: true });
+    const res = await demoApp.request("/api/auth/request-code", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "demo@example.nl" }),
+    });
+    expect(res.status).toBe(200);
+    const { demoCode } = (await res.json()) as { demoCode: string };
+    expect(demoCode).toMatch(/^\d{6}$/);
+    const verify = await demoApp.request("/api/auth/verify", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "demo@example.nl", code: demoCode }),
+    });
+    expect(verify.status).toBe(200);
+  });
+  it("blijft 204 zonder body als demoShowCode uit staat", async () => {
+    const res = await app.request("/api/auth/request-code", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "stil@example.nl" }),
+    });
+    expect(res.status).toBe(204);
+    expect(await res.text()).toBe("");
+  });
+});
+
 describe("payments (mock)", () => {
   it("weigert zonder token", async () => {
     const res = await app.request("/api/payments", { method: "POST" });

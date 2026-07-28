@@ -5,7 +5,7 @@ import { PermissionStore } from "./permissions";
 import { HomeScreen } from "./components/HomeScreen";
 import { MiniAppView } from "./components/MiniAppView";
 import { PermissionDialog } from "./components/PermissionDialog";
-import { LoginView } from "./components/LoginView";
+import { WelcomeView } from "./components/WelcomeView";
 import { t } from "./i18n";
 
 export interface Session { email: string; token: string }
@@ -70,7 +70,7 @@ export function App() {
     setActive(null);
   };
 
-  if (!session) return <LoginView onLogin={login} />;
+  if (!session) return <WelcomeView onLogin={login} />;
   return (
     <>
       {active ? (
