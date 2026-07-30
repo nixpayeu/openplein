@@ -173,8 +173,9 @@ create-plein-app mijnwinkel
 <span class="c">// betalen vanuit je mini-app</span>
 const plein = PleinBridge.createPleinClient();
 await plein.pay({ amount: <span class="s">"2.50"</span>, currency: <span class="s">"EUR"</span>, description: <span class="s">"Koffie"</span> });</code></pre>
-    <p style="margin-top:1rem;font-size:.92rem;color:var(--ink-zacht)">De volledige mini-app-specificatie
-    (manifest, permissies, sandbox-eisen) staat in de repository en verschijnt hier zodra de code publiek is.</p>
+    <p style="margin-top:1rem;font-size:.92rem;color:var(--ink-zacht)">De code is open source:
+    <a href="https://github.com/nixpayeu/openplein">github.com/nixpayeu/openplein</a> — met daarin de
+    volledige mini-app-specificatie (manifest, permissies, sandbox-eisen) in <code style="font-family:var(--mono);font-size:.9em">docs/miniapp-spec.md</code>.</p>
   </div>
 </section>
 
@@ -214,7 +215,6 @@ await plein.pay({ amount: <span class="s">"2.50"</span>, currency: <span class="
           <li>Echte betalingen en app-store-versies (Capacitor)</li>
           <li>EUDI-wallet-login en Matrix-messaging</li>
           <li>Open registry met review-proces voor mini-apps</li>
-          <li>Publieke broncode op GitHub</li>
         </ul>
         <p class="noot">Eén eerlijke volgorde: eerst degelijk, dan groot.</p>
       </div>
@@ -232,7 +232,7 @@ await plein.pay({ amount: <span class="s">"2.50"</span>, currency: <span class="
       identity, storage</span>). We build only the thin missing layer and compose European building
       blocks — Mollie/Nixpay for payments, the EUDI wallet and Matrix on the roadmap. Licensed
       AGPL-3.0 (runtime, bridge) and MIT (SDK). Try the <a href="https://plein.sovereignaigrid.nl">live demo</a>
-      (test payments only).</p>
+      (test payments only) or browse the <a href="https://github.com/nixpayeu/openplein">source on GitHub</a>.</p>
     </div>
   </div>
 </section>
@@ -242,7 +242,8 @@ await plein.pay({ amount: <span class="s">"2.50"</span>, currency: <span class="
     <div>
       <strong style="color:#fff">OpenPlein</strong><br>
       Een initiatief van <a href="https://sovereignaigrid.nl">Sovereign AI Grid</a><br>
-      Founding payment provider: <a href="https://nixpay.eu">Nixpay</a>
+      Founding payment provider: <a href="https://nixpay.eu">Nixpay</a><br>
+      Broncode: <a href="https://github.com/nixpayeu/openplein">github.com/nixpayeu/openplein</a>
     </div>
     <div class="licenties">
       runtime + bridge · AGPL-3.0<br>
