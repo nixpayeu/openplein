@@ -1,6 +1,10 @@
 # NGI Zero Commons Fund — conceptaanvraag (klaar voor het formulier)
 
-**Status: CONCEPT — nog niet ingediend.** Dit zijn de volledige Engelstalige
+**Status: CONCEPT voor de heropende open call (na de zomer van 2026).** Het
+Commons Fund pauzeert tot dan (NLnet-transitie naar de Open Internet Stack);
+het betaal-spoor is afgesplitst naar **`application-taler-2026.md`** (NGI
+Taler, deadline 1 aug 2026) — dit concept dekt bewust alleen de
+niet-betaal-werkpakketten, dus er is geen overlap. Dit zijn de volledige Engelstalige
 antwoorden voor het NLnet-aanvraagformulier
 ([nlnet.nl/propose](https://nlnet.nl/propose/)), opgesteld na afronding van
 fase 0. Vóór indienen: bedrag en persoonsgegevens checken, tekenlimieten
