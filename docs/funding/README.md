@@ -7,6 +7,10 @@ fase 2: Matrix, EUDI-wallet-identity, mini-app-registry — zie
 [`docs/miniapp-spec.md`](../miniapp-spec.md) en de
 [design spec](../superpowers/specs/2026-07-27-openplein-design.md)).
 
+De onderbouwing van de marktbehoefte staat apart in
+[`../marktbehoefte.md`](../marktbehoefte.md), als dossier van signalen met
+per signaal expliciet wat het wel en niet aantoont.
+
 NLnet-rondes lopen elke ~2 maanden; de aanvraag zelf is Engelstalig en
 ongeveer twee pagina's. De secties hieronder volgen de velden van het
 NLnet-aanvraagformulier, elk met een aanzet van 2-3 zinnen om vanuit verder
