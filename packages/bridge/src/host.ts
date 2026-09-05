@@ -7,7 +7,7 @@ import { PleinError } from "./client";
 
 export interface Providers {
   pay(appId: string, params: unknown): Promise<unknown>;
-  identityRequest(appId: string): Promise<{ subject: string; displayName: string }>;
+  identityRequest(appId: string): Promise<{ subject: string }>;
   identityEmail(appId: string): Promise<{ email: string }>;
   storageGet(appId: string, key: string): Promise<string | null>;
   storageSet(appId: string, key: string, value: string): Promise<void>;

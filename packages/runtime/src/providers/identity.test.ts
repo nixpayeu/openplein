@@ -17,6 +17,11 @@ describe("identityProvider", () => {
     expect(JSON.stringify(r)).not.toContain("jan@example.org");
   });
 
+  it("geeft bij request() geen enkel veld naast subject terug", async () => {
+    const r = await identityProvider(sessie).request("nl.example.a");
+    expect(Object.keys(r)).toEqual(["subject"]);
+  });
+
   it("geeft twee mini-apps een verschillend pseudoniem voor hetzelfde lid", async () => {
     const p = identityProvider(sessie);
     const a = await p.request("nl.example.a");

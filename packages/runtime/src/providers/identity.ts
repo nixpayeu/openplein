@@ -11,7 +11,9 @@ function salt(): string {
 }
 
 async function pseudoniem(appId: string, email: string): Promise<string> {
-  const bytes = new TextEncoder().encode(`${salt()}|${appId}|${email}`);
+  // JSON.stringify i.p.v. een handmatig scheidingsteken: botsingsvrij, ook als
+  // appId of het lokale deel van het e-mailadres een "|" bevat.
+  const bytes = new TextEncoder().encode(JSON.stringify([salt(), appId, email]));
   const hash = await crypto.subtle.digest("SHA-256", bytes);
   return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
@@ -23,9 +25,11 @@ export function identityProvider(getSession: () => { email: string } | null) {
     return s;
   };
   return {
-    async request(appId: string): Promise<{ subject: string; displayName: string }> {
+    // Alleen het pseudoniem: geen weergavenaam, anders kunnen twee mini-apps
+    // via displayName alsnog vaststellen dat ze hetzelfde lid bedienen.
+    async request(appId: string): Promise<{ subject: string }> {
       const { email } = sessie();
-      return { subject: await pseudoniem(appId, email), displayName: email.split("@")[0] };
+      return { subject: await pseudoniem(appId, email) };
     },
     async email(_appId: string): Promise<{ email: string }> {
       return { email: sessie().email };
