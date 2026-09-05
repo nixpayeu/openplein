@@ -108,6 +108,12 @@ importers:
         specifier: ^0.21
         version: 0.21.5
 
+  packages/tenant:
+    dependencies:
+      ajv:
+        specifier: ^8.16.0
+        version: 8.20.0
+
 packages:
 
   '@apideck/better-ajv-errors@0.3.7':

@@ -1,0 +1,9 @@
+{
+  "name": "@openplein/tenant",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "main": "src/index.ts",
+  "files": ["src"],
+  "dependencies": { "ajv": "^8.16.0" }
+}
