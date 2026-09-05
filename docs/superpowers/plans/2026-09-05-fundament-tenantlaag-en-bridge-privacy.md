@@ -1120,24 +1120,28 @@ Expected: `1` of hoger. Is het `0`, dan is Task 5 stap 9 niet doorgevoerd.
 
 - [ ] **Step 2: Werk de lijstje-mini-app bij**
 
+Na de reviewronde op Task 6 geeft `identity.request()` **alleen** `{ subject }` terug. Er is geen weergavenaam meer, want die was voor elke mini-app identiek en ondermijnde daarmee precies de onkoppelbaarheid die het pseudoniem moest leveren. De mini-app heeft dus niets om de gebruiker mee aan te spreken, en dat is de bedoeling: wie dat wil, vraagt de `email`-permissie aan.
+
 In `apps/demo/miniapps/lijstje/app.js`, vervang regel 47:
 
 ```js
-    const { displayName } = await plein.identity.request();
+    await plein.identity.request();
 ```
 
+De aanroep blijft staan omdat hij de permissiedialoog uitlokt en aantoont dat de mini-app is ingelogd, maar het resultaat wordt niet meer gebruikt.
+
 Run: `grep -n "email" apps/demo/miniapps/lijstje/app.js`
-Verwacht: treffers op de plek waar de variabele daarna gebruikt wordt, bijvoorbeeld in een kop als `Lijstje van ${email}`. Vervang elke `email` in dat bestand door `displayName`.
+Verwacht: treffers op de plek waar de variabele daarna gebruikt werd, bijvoorbeeld in een kop als `Lijstje van ${email}`. Vervang die kop door de vaste tekst `Jouw lijstje`.
 
 Run opnieuw: `grep -n "email" apps/demo/miniapps/lijstje/app.js`
 Expected: geen treffers.
 
 - [ ] **Step 3: Pas de bestaande e2e-verwachting aan**
 
-De mini-app toont voortaan het deel vóór de apenstaart. Voor het testadres `e2e@plein.test` is dat `e2e`. Vervang in `e2e/tests/shell.spec.ts` regel 22:
+Vervang in `e2e/tests/shell.spec.ts` regel 22:
 
 ```ts
-  await expect(frame.getByText("Lijstje van e2e")).toBeVisible();
+  await expect(frame.getByText("Jouw lijstje")).toBeVisible();
 ```
 
 - [ ] **Step 4: Voeg de test toe die het lek dichthoudt**
@@ -1151,10 +1155,13 @@ test("een mini-app met alleen identity ziet het e-mailadres niet", async ({ page
   await page.getByRole("button", { name: /Toestaan|Allow/ }).click(); // identity
   await page.getByRole("button", { name: /Toestaan|Allow/ }).click(); // storage
   const frame = page.frameLocator("iframe");
-  await expect(frame.getByText("Lijstje van e2e")).toBeVisible();
+  await expect(frame.getByText("Jouw lijstje")).toBeVisible();
   await expect(frame.locator("body")).not.toContainText("e2e@plein.test");
+  await expect(frame.locator("body")).not.toContainText("e2e");
 });
 ```
+
+De laatste regel is scherper dan hij lijkt: `e2e` is het deel vóór de apenstaart van het testadres. Zou een latere wijziging alsnog een van het e-mailadres afgeleide naam doorgeven, dan valt deze test om.
 
 Dit is de test die faalt op de oude code en slaagt op de nieuwe. Draai hem daarom bewust twee keer: eerst met `git stash` over de wijzigingen van Task 6 en 7 om te zien dat hij faalt, daarna zonder.
 
@@ -1167,7 +1174,14 @@ Expected: alles slaagt, inclusief de twee e2e-tests.
 
 - [ ] **Step 6: Werk de mini-app-specificatie bij**
 
-In `docs/miniapp-spec.md`, pas de beschrijving van `identity.request` aan: die geeft `{ subject, displayName }` terug, waarbij `subject` per mini-app verschilt en dus niet bruikbaar is om leden tussen mini-apps te herkennen. Beschrijf `identity.email` als aparte methode achter de `email`-permissie.
+In `docs/miniapp-spec.md` staat rond regel 85 tot 91 nog dat `plein.identity.request()` een `{ email: string }` teruggeeft. Dat is achterhaald en misleidt iedere mini-app-bouwer die alleen de spec leest.
+
+Pas het aan naar het werkelijke contract:
+
+- `identity.request()` geeft `{ subject: string }`. De `subject` is een pseudoniem dat per mini-app verschilt, zodat twee mini-apps niet kunnen vaststellen dat ze hetzelfde lid bedienen. Er zit bewust geen naam of adres in.
+- `identity.email()` geeft `{ email: string }` en hangt aan de aparte permissie `email`, met een eigen toestemmingsdialoog.
+
+Noem daarbij ook de grens eerlijk: het pseudoniem wordt afgeleid met een salt die in de browser van de gebruiker staat, dus hij verandert als de gebruiker zijn browseropslag wist.
 
 - [ ] **Step 7: Corrigeer de README over Nixpay**
 
