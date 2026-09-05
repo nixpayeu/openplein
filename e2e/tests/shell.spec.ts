@@ -17,7 +17,7 @@ test("volledige flow: login → lijstje → permissies → betaling (mock)", asy
   await page.getByRole("button", { name: /Toestaan|Allow/ }).click(); // identity
   await page.getByRole("button", { name: /Toestaan|Allow/ }).click(); // storage
   const frame = page.frameLocator("iframe");
-  await expect(frame.getByText("Lijstje van e2e@plein.test")).toBeVisible();
+  await expect(frame.getByText("Jouw lijstje")).toBeVisible();
 
   await page.getByRole("button", { name: /Sluiten|Close/ }).click();
   await page.getByRole("button", { name: /Betaal-demo/ }).click();
@@ -25,4 +25,15 @@ test("volledige flow: login → lijstje → permissies → betaling (mock)", asy
   await frame2.getByRole("button", { name: /2,50/ }).click();
   await page.getByRole("button", { name: /Toestaan|Allow/ }).click(); // payments
   await expect(frame2.getByText(/Bedankt voor je steun/)).toBeVisible({ timeout: 15_000 });
+});
+
+test("een mini-app met alleen identity ziet het e-mailadres niet", async ({ page }) => {
+  await login(page);
+  await page.getByRole("button", { name: /Lijstje/ }).click();
+  await page.getByRole("button", { name: /Toestaan|Allow/ }).click(); // identity
+  await page.getByRole("button", { name: /Toestaan|Allow/ }).click(); // storage
+  const frame = page.frameLocator("iframe");
+  await expect(frame.getByText("Jouw lijstje")).toBeVisible();
+  await expect(frame.locator("body")).not.toContainText("e2e@plein.test");
+  await expect(frame.locator("body")).not.toContainText("e2e");
 });

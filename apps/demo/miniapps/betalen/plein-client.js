@@ -68,7 +68,10 @@ var PleinBridge = (() => {
     }
     return {
       pay: (p) => call("pay", p),
-      identity: { request: () => call("identity.request") },
+      identity: {
+        request: () => call("identity.request"),
+        email: () => call("identity.email")
+      },
       storage: {
         get: (key) => call("storage.get", { key }),
         set: (key, value) => call("storage.set", { key, value })

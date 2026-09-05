@@ -85,13 +85,38 @@ sandboxed iframes zonder `allow-same-origin` standaard krijgen (zie §4).
 ### 2.1 `plein.identity.request()`
 
 ```js
-const { email } = await plein.identity.request();
+const { subject } = await plein.identity.request();
 ```
 
-Respons: `{ email: string }`. Vereist de `identity`-permissie. De MVP-
-identiteitsprovider is e-mail/magic-link; er is geen sessie zonder login in
-de shell — als de gebruiker niet is ingelogd faalt de call met
+Respons: `{ subject: string }`. Vereist de `identity`-permissie. `subject`
+is een pseudoniem, niet een e-mailadres of naam: de shell berekent het als
+`SHA-256` over `[salt, appId, email]`, waarbij `salt` een willekeurige
+waarde is die per browserinstallatie in `localStorage` van de shell staat.
+Daardoor krijgt dezelfde gebruiker in elke mini-app een ander pseudoniem,
+en kunnen twee mini-apps niet vaststellen dat ze hetzelfde lid bedienen.
+Er zit bewust geen naam of adres in — een mini-app die de gebruiker wil
+aanspreken of mailen, vraagt daarvoor de `email`-permissie (§2.1bis).
+
+De grens: het pseudoniem is aan de browser gebonden, niet aan het lid. Wist
+de gebruiker zijn browseropslag (of gebruikt hij een ander apparaat), dan
+verandert de salt en dus het pseudoniem. Voor stabiele koppeling tussen
+sessies is dit dus geen geschikte sleutel.
+
+De MVP-identiteitsprovider is e-mail/magic-link; er is geen sessie zonder
+login in de shell — als de gebruiker niet is ingelogd faalt de call met
 `NOT_AUTHENTICATED` (zie §2.4).
+
+### 2.1bis `plein.identity.email()`
+
+```js
+const { email } = await plein.identity.email();
+```
+
+Respons: `{ email: string }`. Vereist de aparte `email`-permissie, met een
+eigen toestemmingsdialoog naast die van `identity` — een mini-app met
+alleen `identity` krijgt het e-mailadres nooit te zien. Zonder actieve
+shell-sessie faalt de call met `NOT_AUTHENTICATED`, net als
+`identity.request()`.
 
 ### 2.2 `plein.storage.get(key)` / `plein.storage.set(key, value)`
 
