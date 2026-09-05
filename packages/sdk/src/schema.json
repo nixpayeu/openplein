@@ -15,7 +15,7 @@
     },
     "permissions": {
       "type": "array",
-      "items": { "enum": ["payments", "identity", "storage", "notifications"] }
+      "items": { "enum": ["payments", "identity", "storage", "notifications", "email"] }
     }
   }
 }

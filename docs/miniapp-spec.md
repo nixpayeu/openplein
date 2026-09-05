@@ -24,7 +24,7 @@ gevalideerd door `validateManifest()` uit `@openplein/sdk`
 | `entry` | string, `format: uri` | ja | Absolute URL waar de mini-app draait; het `origin` hiervan is de enige toegestane herkomst voor bridge-berichten van deze mini-app. |
 | `provider.name` | string | ja | Naam van de aanbieder (getoond als "door {provider}"). |
 | `provider.url` | string | ja | URL van de aanbieder. |
-| `permissions` | array van `"payments" \| "identity" \| "storage" \| "notifications"` | ja | De permissies die de mini-app kan opvragen. `notifications` is gereserveerd voor fase 1; er is nog geen bridge-methode voor. |
+| `permissions` | array van `"payments" \| "identity" \| "storage" \| "notifications" \| "email"` | ja | De permissies die de mini-app kan opvragen. `notifications` is gereserveerd voor fase 1; er is nog geen bridge-methode voor. `email` geeft het e-mailadres van het ingelogde lid, apart van `identity` met een eigen toestemmingsdialoog; een mini-app met alleen `identity` krijgt een pseudoniem en komt het adres nooit te weten. |
 
 Het schema staat `additionalProperties: false`: onbekende velden op het
 top-niveau maken het manifest ongeldig. `validateManifest()` geeft bij een

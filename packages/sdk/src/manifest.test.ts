@@ -24,6 +24,14 @@ describe("validateManifest", () => {
     const r = validateManifest({ ...valid, permissions: ["camera"] });
     expect(r.valid).toBe(false);
   });
+  it("accepteert de email-permissie", () => {
+    const r = validateManifest({ ...valid, permissions: ["identity", "email"] });
+    expect(r.valid).toBe(true);
+  });
+  it("weigert een onbekende permissie", () => {
+    const r = validateManifest({ ...valid, permissions: ["telepathie"] });
+    expect(r.valid).toBe(false);
+  });
   it("weigert een entry die geen URI is", () => {
     const r = validateManifest({ ...valid, entry: "geen uri" });
     expect(r.valid).toBe(false);
