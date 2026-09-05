@@ -411,7 +411,7 @@ Er is geen extra foutafhandeling nodig: `loadTenantConfig` gooit, en een niet-af
 
 - [ ] **Step 11: Maak de standaardconfiguratie voor de demo**
 
-`apps/demo/server/tenant.json`. Neem de inhoud van `packages/runtime/catalog.prod.json` over als waarde van `catalog`:
+`apps/demo/server/tenant.json`. Dit is de **ontwikkel- en e2e-configuratie**, dus de catalogus komt uit `packages/runtime/public/catalog.json` met de localhost-adressen, niet uit `catalog.prod.json`. De e2e-opzet draait de mini-apps op poort 5180 en 5181 (`e2e/playwright.config.ts`); met de productie-URL's zou die suite breken.
 
 ```json
 {
@@ -421,8 +421,10 @@ Er is geen extra foutafhandeling nodig: `loadTenantConfig` gooit, en een niet-af
 }
 ```
 
-Run: `cat packages/runtime/catalog.prod.json`
+Run: `cat packages/runtime/public/catalog.json`
 Vervang daarna de lege `catalog`-lijst hierboven door precies die inhoud, ongewijzigd.
+
+Let op: `loadTenantConfig` krijgt standaard het pad `./tenant.json`, relatief aan de werkmap. `pnpm --filter @openplein/demo-server start` draait in `apps/demo/server`, dus dat pad klopt. Dat is dezelfde aanname als de bestaande `serveStatic`-paden in `app.ts`.
 
 - [ ] **Step 12: Controleer dat de server start**
 
@@ -659,6 +661,14 @@ door:
 ```
  && cp deploy/tenant.saig.json apps/demo/server/tenant.json
 ```
+
+Voeg in `Dockerfile` bij de tweede stage, naast `ENV SERVE_STATIC=1`, toe:
+
+```
+ENV TENANT_HOSTNAME=plein.sovereignaigrid.nl
+```
+
+Zonder die regel start de container niet: `deploy/tenant.saig.json` heeft `hostname` `plein.sovereignaigrid.nl` en de standaardwaarde van `TENANT_HOSTNAME` is `localhost`, dus de hostnaamcontrole slaat aan. Dat is precies het bedoelde gedrag, maar het moet in het image goed staan.
 
 Verplaats `packages/runtime/catalog.prod.json` naar `deploy/tenant.saig.json` en wikkel de inhoud in het tenantformaat:
 
