@@ -11,7 +11,7 @@ async function login(page: Page) {
 
 test("volledige flow: login → lijstje → permissies → betaling (mock)", async ({ page }) => {
   await login(page);
-  await expect(page.getByRole("heading", { name: "Plein" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Plein", exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: /Lijstje/ }).click();
   await page.getByRole("button", { name: /Toestaan|Allow/ }).click(); // identity
