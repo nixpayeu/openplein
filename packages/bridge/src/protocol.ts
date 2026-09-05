@@ -18,6 +18,7 @@ export type BridgeResponse =
 const METHOD_PERMISSIONS: Record<string, Permission> = {
   pay: "payments",
   "identity.request": "identity",
+  "identity.email": "email",
   "storage.get": "storage",
   "storage.set": "storage",
 };

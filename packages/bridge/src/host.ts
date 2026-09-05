@@ -7,7 +7,8 @@ import { PleinError } from "./client";
 
 export interface Providers {
   pay(appId: string, params: unknown): Promise<unknown>;
-  identityRequest(appId: string): Promise<{ email: string }>;
+  identityRequest(appId: string): Promise<{ subject: string; displayName: string }>;
+  identityEmail(appId: string): Promise<{ email: string }>;
   storageGet(appId: string, key: string): Promise<string | null>;
   storageSet(appId: string, key: string, value: string): Promise<void>;
 }
@@ -75,6 +76,9 @@ export class PleinHost {
           break;
         case "identity.request":
           result = await providers.identityRequest(manifest.id);
+          break;
+        case "identity.email":
+          result = await providers.identityEmail(manifest.id);
           break;
         case "storage.get":
           if (typeof p.key !== "string" || p.key.length === 0) {
