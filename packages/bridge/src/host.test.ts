@@ -10,13 +10,18 @@ const manifest: PleinManifest = {
   permissions: ["storage"],
 };
 
-function makeHost(gateAnswer: boolean, providers: Partial<Record<string, unknown>> = {}) {
+function makeHost(
+  gateAnswer: boolean,
+  providers: Partial<Record<string, unknown>> = {},
+  permissions: PleinManifest["permissions"] = ["storage"],
+) {
   const sent: BridgeResponse[] = [];
   const source = { postMessage: (m: BridgeResponse) => sent.push(m) } as unknown as Window;
   const host = new PleinHost({
-    manifest, source, gate: async () => gateAnswer,
+    manifest: { ...manifest, permissions }, source, gate: async () => gateAnswer,
     providers: {
       pay: vi.fn(), identityRequest: vi.fn(),
+      identityEmail: vi.fn(async () => ({ email: "jan@example.org" })),
       storageGet: vi.fn(async () => "melk"), storageSet: vi.fn(async () => {}),
       ...providers,
     } as never,
@@ -82,5 +87,20 @@ describe("PleinHost", () => {
     deliver(source, { plein: "0.1", id: "g", method: "storage.set", params: { value: "1" } });
     await flush();
     expect(sent[0]).toMatchObject({ ok: false, error: { code: "INVALID_PARAMS" } });
+  });
+  it("weigert identity.email zonder de email-permissie", async () => {
+    const { sent, source } = makeHost(true, {}, ["identity"]);
+    deliver(source, { plein: "0.1", id: "e", method: "identity.email" });
+    await flush();
+    expect(sent[0]).toMatchObject({ ok: false, error: { code: "PERMISSION_DENIED" } });
+  });
+
+  it("geeft het e-mailadres met de email-permissie", async () => {
+    const { sent, source } = makeHost(true, {}, ["identity", "email"]);
+    deliver(source, { plein: "0.1", id: "f", method: "identity.email" });
+    await flush();
+    expect(sent[0]).toEqual({
+      plein: "0.1", id: "f", ok: true, result: { email: "jan@example.org" },
+    });
   });
 });

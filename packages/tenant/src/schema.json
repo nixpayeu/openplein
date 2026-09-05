@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["hostname", "name", "catalog"],
+  "additionalProperties": false,
+  "properties": {
+    "hostname": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "logoUrl": { "type": "string", "minLength": 1 },
+    "colors": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "navy-1": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "navy-2": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "steel": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "mint": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "ijs": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "wit": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+      }
+    },
+    "catalog": { "type": "array", "items": { "type": "object" } }
+  }
+}

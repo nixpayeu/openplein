@@ -17,4 +17,11 @@ describe("protocol", () => {
     expect(methodPermission("storage.set")).toBe("storage");
     expect(methodPermission("bestaatNiet")).toBe(null);
   });
+  it("koppelt identity.email aan de email-permissie", () => {
+    expect(methodPermission("identity.email")).toBe("email");
+  });
+
+  it("laat identity.request op identity staan", () => {
+    expect(methodPermission("identity.request")).toBe("identity");
+  });
 });

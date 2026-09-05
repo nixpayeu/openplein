@@ -44,8 +44,11 @@ document.getElementById("lijst").addEventListener("click", async (e) => {
 
 (async () => {
   try {
-    const { email } = await plein.identity.request();
-    document.getElementById("wie").textContent = `Lijstje van ${email}`;
+    // De aanroep blijft staan: hij lokt de permissiedialoog uit en toont dat
+    // de mini-app is ingelogd. Het pseudoniem uit het antwoord gebruiken we
+    // niet als aanspreekvorm, want dat is per mini-app anders en dus geen naam.
+    await plein.identity.request();
+    document.getElementById("wie").textContent = "Jouw lijstje";
   } catch { document.getElementById("wie").textContent = "Niet ingelogd"; }
 
   try {

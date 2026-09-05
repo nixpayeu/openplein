@@ -3,7 +3,9 @@
 **OpenPlein ("Plein")** is an open-source mini-app platform for NL/EU: a single
 runtime ("super-app") in which European services and products run as
 sandboxed mini-apps — the WeChat model, but sovereign, open source and built
-on European building blocks (Nixpay for payments today; Matrix and an EUDI
+on European building blocks (payments run on Mollie in the current demo, with
+Nixpay as the intended first European provider behind the same swappable
+contract; Matrix and an EUDI
 wallet identity provider are on the roadmap). An initiative of
 [Sovereign AI Grid](https://sovereignaigrid.nl), with [Nixpay](https://nixpay.eu)
 as founding payment provider. `packages/runtime` and `packages/bridge` are
@@ -23,7 +25,9 @@ OpenPlein is een open-source mini-app-platform voor NL/EU: **jouw diensten,
 Europese diensten en producten als mini-apps draaien — elk in een
 gesandboxte iframe, elk pratend met de shell via een getypeerde bridge-API.
 Geen eigen betaalinfrastructuur, geen eigen chat-protocol: OpenPlein
-componeert bestaande Europese bouwstenen (Nixpay voor betalen, straks Matrix
+componeert bestaande Europese bouwstenen (betalen loopt in de demo via Mollie,
+met Nixpay als beoogde eerste Europese provider achter hetzelfde verwisselbare
+contract; straks Matrix
 en een EUDI-wallet voor identiteit) in plaats van ze zelf te bouwen.
 
 Zie [`docs/superpowers/specs/2026-07-27-openplein-design.md`](docs/superpowers/specs/2026-07-27-openplein-design.md)

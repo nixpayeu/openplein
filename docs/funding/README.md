@@ -26,7 +26,8 @@ werkende demo (fase 0 is nu klaar: shell, bridge, sdk, twee demo-mini-apps).
 > sandboxed mini-apps, communicating with the shell only through a typed,
 > permissioned bridge API. Rather than building its own payment rails or
 > messaging protocol, OpenPlein composes existing European building
-> blocks — starting with Nixpay for payments, with Matrix (messaging) and
+> blocks, starting with payments (Mollie today, Nixpay as the intended
+> European provider behind the same contract), with Matrix (messaging) and
 > an EUDI-wallet identity provider planned as swappable providers — so
 > that digital sovereignty is architectural, not a slogan. The MVP ships a
 > working shell, a bridge with identity/storage/payments, an SDK with a

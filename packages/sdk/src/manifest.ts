@@ -2,7 +2,7 @@ import Ajv from "ajv/dist/2020";
 import addFormats from "ajv-formats";
 import schema from "./schema.json" with { type: "json" };
 
-export const PERMISSIONS = ["payments", "identity", "storage", "notifications"] as const;
+export const PERMISSIONS = ["payments", "identity", "storage", "notifications", "email"] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
 export interface PleinManifest {

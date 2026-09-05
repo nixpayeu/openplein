@@ -25,8 +25,10 @@
   "welcome.expect3": "Want to learn more or build a mini-app? Visit",
   "perm.title": "Permission requested", "perm.body": "{app} requests access to: {permission}",
   "perm.allow": "Allow", "perm.deny": "Deny",
-  "perm.payments": "payments", "perm.identity": "your identity (email address)",
+  "perm.payments": "payments", "perm.identity": "a pseudonym this app can recognise you by",
   "perm.storage": "storage in this app", "perm.notifications": "notifications",
+  "perm.email": "your email address",
   "miniapp.close": "Close", "miniapp.by": "by {provider}",
-  "checkout.title": "Payment waiting", "checkout.open": "Open the payment page"
+  "checkout.title": "Payment waiting", "checkout.open": "Open the payment page",
+  "tenant.loadError": "The plein could not be loaded. Please try again later."
 }

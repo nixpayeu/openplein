@@ -31,6 +31,12 @@ importers:
       '@mollie/api-client':
         specifier: ^3.7.0
         version: 3.7.0
+      '@openplein/sdk':
+        specifier: workspace:*
+        version: link:../../../packages/sdk
+      '@openplein/tenant':
+        specifier: workspace:*
+        version: link:../../../packages/tenant
       hono:
         specifier: ^4.4.0
         version: 4.12.32
@@ -72,6 +78,9 @@ importers:
       '@openplein/sdk':
         specifier: workspace:*
         version: link:../sdk
+      '@openplein/tenant':
+        specifier: workspace:*
+        version: link:../tenant
       react:
         specifier: ^18.3.0
         version: 18.3.1
@@ -107,6 +116,12 @@ importers:
       esbuild:
         specifier: ^0.21
         version: 0.21.5
+
+  packages/tenant:
+    dependencies:
+      ajv:
+        specifier: ^8.16.0
+        version: 8.20.0
 
 packages:
 

@@ -8,7 +8,10 @@ export class PleinError extends Error {
 
 export interface PleinClient {
   pay(p: { amount: string; currency: "EUR"; description: string }): Promise<{ status: "paid" | "canceled" | "failed" }>;
-  identity: { request(): Promise<{ email: string }> };
+  identity: {
+    request(): Promise<{ subject: string }>;
+    email(): Promise<{ email: string }>;
+  };
   storage: { get(key: string): Promise<string | null>; set(key: string, value: string): Promise<void> };
   dispose(): void;
 }
@@ -54,7 +57,10 @@ export function createPleinClient(opts: { target?: Window; timeoutMs?: number } 
 
   return {
     pay: (p) => call("pay", p) as Promise<{ status: "paid" | "canceled" | "failed" }>,
-    identity: { request: () => call("identity.request") as Promise<{ email: string }> },
+    identity: {
+      request: () => call("identity.request") as Promise<{ subject: string }>,
+      email: () => call("identity.email") as Promise<{ email: string }>,
+    },
     storage: {
       get: (key) => call("storage.get", { key }) as Promise<string | null>,
       set: (key, value) => call("storage.set", { key, value }) as Promise<void>,

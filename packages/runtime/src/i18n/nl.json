@@ -25,8 +25,10 @@
   "welcome.expect3": "Meer weten of zelf een mini-app bouwen? Kijk op",
   "perm.title": "Toestemming gevraagd", "perm.body": "{app} vraagt toegang tot: {permission}",
   "perm.allow": "Toestaan", "perm.deny": "Weigeren",
-  "perm.payments": "betalingen", "perm.identity": "je identiteit (e-mailadres)",
+  "perm.payments": "betalingen", "perm.identity": "een pseudoniem waarmee de app je herkent",
   "perm.storage": "opslag in deze app", "perm.notifications": "meldingen",
+  "perm.email": "je e-mailadres",
   "miniapp.close": "Sluiten", "miniapp.by": "door {provider}",
-  "checkout.title": "Betaling wacht", "checkout.open": "Open de betaalpagina"
+  "checkout.title": "Betaling wacht", "checkout.open": "Open de betaalpagina",
+  "tenant.loadError": "Het plein kon niet geladen worden. Probeer het later opnieuw."
 }

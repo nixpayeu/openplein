@@ -24,7 +24,7 @@ gevalideerd door `validateManifest()` uit `@openplein/sdk`
 | `entry` | string, `format: uri` | ja | Absolute URL waar de mini-app draait; het `origin` hiervan is de enige toegestane herkomst voor bridge-berichten van deze mini-app. |
 | `provider.name` | string | ja | Naam van de aanbieder (getoond als "door {provider}"). |
 | `provider.url` | string | ja | URL van de aanbieder. |
-| `permissions` | array van `"payments" \| "identity" \| "storage" \| "notifications"` | ja | De permissies die de mini-app kan opvragen. `notifications` is gereserveerd voor fase 1; er is nog geen bridge-methode voor. |
+| `permissions` | array van `"payments" \| "identity" \| "storage" \| "notifications" \| "email"` | ja | De permissies die de mini-app kan opvragen. `notifications` is gereserveerd voor fase 1; er is nog geen bridge-methode voor. `email` geeft het e-mailadres van het ingelogde lid, apart van `identity` met een eigen toestemmingsdialoog; een mini-app met alleen `identity` krijgt een pseudoniem en komt het adres nooit te weten. |
 
 Het schema staat `additionalProperties: false`: onbekende velden op het
 top-niveau maken het manifest ongeldig. `validateManifest()` geeft bij een
@@ -40,9 +40,21 @@ minimale mini-app met ingevuld manifest neer:
 node packages/sdk/dist/create-plein-app.mjs mijn-app
 ```
 
-Distributie in fase 0 is een platte `catalog.json` in
-`packages/runtime/public/catalog.json` die naar gehoste mini-app-URL's
-wijst — geen registry, geen review-proces (zie roadmap onderaan).
+Distributie in fase 0 loopt via de catalogus in de tenantconfiguratie van de
+installatie (`packages/tenant/src/schema.json`, veld `catalog`), die de
+shell-backend serveert op `GET /api/tenant`. De beheerder van een installatie
+neemt het manifest van een mini-app over als catalogusregel — geen registry,
+geen review-proces (zie roadmap onderaan).
+
+Let op: de catalogusregel is gezaghebbend, niet het `plein.manifest.json` dat
+de mini-app zelf meelevert. De shell leest permissies, `id`, `entry` en de
+overige velden uit de catalogus in de tenantconfiguratie
+(`apps/demo/server/tenant.json` in de demo-installatie); het manifest van de
+mini-app is voor de bouwer een sjabloon dat de beheerder overneemt, geen bron
+die de shell zelf ooit inleest. Een mini-app die in zijn eigen manifest
+`permissions: ["payments"]` opneemt, krijgt die permissie dus niet
+automatisch: de beheerder moet dezelfde permissies overnemen in de
+catalogusregel, en alleen die regel telt.
 
 ## 2. De bridge-API
 
@@ -85,13 +97,38 @@ sandboxed iframes zonder `allow-same-origin` standaard krijgen (zie §4).
 ### 2.1 `plein.identity.request()`
 
 ```js
-const { email } = await plein.identity.request();
+const { subject } = await plein.identity.request();
 ```
 
-Respons: `{ email: string }`. Vereist de `identity`-permissie. De MVP-
-identiteitsprovider is e-mail/magic-link; er is geen sessie zonder login in
+Respons: `{ subject: string }`. Vereist de `identity`-permissie. `subject`
+is een pseudoniem, niet een e-mailadres of naam: de shell berekent het als
+`SHA-256` over `[salt, appId, email]`, waarbij `salt` een willekeurige
+waarde is die per browserinstallatie in `localStorage` van de shell staat.
+Daardoor krijgt dezelfde gebruiker in elke mini-app een ander pseudoniem,
+en kunnen twee mini-apps niet vaststellen dat ze hetzelfde lid bedienen.
+Er zit bewust geen naam of adres in — een mini-app die de gebruiker wil
+aanspreken of mailen, vraagt daarvoor de `email`-permissie (§2.1bis).
+
+De grens: het pseudoniem is aan de browser gebonden, niet aan het lid. Wist
+de gebruiker zijn browseropslag (of gebruikt hij een ander apparaat), dan
+verandert de salt en dus het pseudoniem. Voor stabiele koppeling tussen
+sessies is dit dus geen geschikte sleutel.
+
+De MVP-inlogprovider is e-mail/magic-link; er is geen sessie zonder login in
 de shell — als de gebruiker niet is ingelogd faalt de call met
 `NOT_AUTHENTICATED` (zie §2.4).
+
+### 2.1bis `plein.identity.email()`
+
+```js
+const { email } = await plein.identity.email();
+```
+
+Respons: `{ email: string }`. Vereist de aparte `email`-permissie, met een
+eigen toestemmingsdialoog naast die van `identity` — een mini-app met
+alleen `identity` krijgt het e-mailadres nooit te zien. Zonder actieve
+shell-sessie faalt de call met `NOT_AUTHENTICATED`, net als
+`identity.request()`.
 
 ### 2.2 `plein.storage.get(key)` / `plein.storage.set(key, value)`
 
@@ -218,10 +255,11 @@ van te blijven hangen.
 
 ## 5. Roadmap
 
-**Fase 0 (MVP, klaar):** shell-PWA met catalogus en permissiedialogen,
-bridge met `identity` (e-mail/magic-link), `storage` en `payments`
-(Nixpay/Mollie-testmodus), sdk met manifest-schema en
-`create-plein-app`-scaffolder, twee demo-mini-apps.
+**Fase 0 (MVP, klaar):** shell-PWA met tenantconfiguratie, catalogus en
+permissiedialogen, bridge met `identity` (pseudoniem, login via
+e-mail/magic-link), `email`, `storage` en `payments` (Nixpay/Mollie-
+testmodus), sdk met manifest-schema en `create-plein-app`-scaffolder, twee
+demo-mini-apps.
 
 **Fase 1 — Stores:** Capacitor-wrap van dezelfde codebase voor Google Play
 en App Store. Bridge-API `notifications` (push) komt in deze fase — het
@@ -235,7 +273,7 @@ permissietype bestaat al in het schema, de RPC-methode nog niet.
   e-mail/magic-link, zonder de bridge-contractvorm van
   `identity.request()` te breken.
 - Een echte **mini-app-registry** met review-proces, ter vervanging van de
-  statische `catalog.json`.
+  handmatig beheerde catalogus in de tenantconfiguratie.
 - Developer-documentatiesite op `openplein.eu`.
 
 Expliciet buiten scope: een eigen chat-protocol, eigen betaalinfrastructuur

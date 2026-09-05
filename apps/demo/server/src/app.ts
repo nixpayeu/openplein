@@ -1,8 +1,10 @@
 import { Hono } from "hono";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
+import type { TenantConfig } from "@openplein/tenant";
 
 interface Options {
+  tenantConfig: TenantConfig;
   authSecret: string; paymentsMock: boolean; mollieApiKey?: string; publicUrl?: string;
   tokenTtlMs?: number;
   /**
@@ -35,6 +37,9 @@ export function createApp(opts: Options): App {
   const mockPayments = new Map<string, { polls: number }>();
   const MAX_VERIFY_ATTEMPTS = 5;
   const MAX_MOCK_PAYMENTS = 1000;
+
+  // Publiek: de shell heeft naam, kleuren en catalogus nodig vóór de inlog.
+  app.get("/api/tenant", (c) => c.json(opts.tenantConfig));
 
   const sign = (email: string, ts: number) => {
     const payload = Buffer.from(`${email}|${ts}`).toString("base64url");

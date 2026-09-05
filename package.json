@@ -6,7 +6,7 @@
   "engines": { "node": ">=22.13" },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "pnpm --filter @openplein/sdk --filter @openplein/bridge --filter @openplein/runtime --filter @openplein/demo-server exec tsc --noEmit -p ."
+    "typecheck": "pnpm --filter @openplein/sdk --filter @openplein/tenant --filter @openplein/bridge --filter @openplein/runtime --filter @openplein/demo-server exec tsc --noEmit -p ."
   },
   "devDependencies": {
     "typescript": "^5.5.0",
