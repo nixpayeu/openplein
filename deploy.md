@@ -75,6 +75,11 @@ starten (`process.exit(1)`) in plaats van door te draaien met een lege
 HMAC-sleutel — check `docker compose logs openplein` als de container direct
 stopt na `up`.
 
+Overige omgevingsvariabelen:
+
+- `TENANT_CONFIG` (standaard `./tenant.json`): pad naar de tenantconfiguratie.
+- `TENANT_HOSTNAME` (standaard `localhost`): de hostnaam waarop deze installatie draait. Komt hij niet overeen met de `hostname` in de configuratie, dan start de server niet.
+
 ## 3. Build + start
 
 ```bash

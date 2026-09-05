@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import type { PleinManifest, Permission } from "@openplein/sdk";
-import { loadCatalog } from "./catalog";
+import { loadTenant, applyTenantBranding } from "./catalog";
 import { PermissionStore } from "./permissions";
 import { HomeScreen } from "./components/HomeScreen";
 import { MiniAppView } from "./components/MiniAppView";
@@ -17,6 +17,7 @@ interface PermissionRequest {
 
 export function App() {
   const [catalog, setCatalog] = useState<PleinManifest[]>([]);
+  const [tenantName, setTenantName] = useState("Plein");
   const [session, setSession] = useState<Session | null>(() => {
     const raw = localStorage.getItem("plein.session");
     if (!raw) return null;
@@ -34,7 +35,13 @@ export function App() {
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    void loadCatalog().then(setCatalog).catch((e) => console.warn("Catalogus laden mislukt:", e));
+    void loadTenant()
+      .then(({ tenant, catalog }) => {
+        applyTenantBranding(tenant);
+        setTenantName(tenant.name);
+        setCatalog(catalog);
+      })
+      .catch((e) => console.warn("Tenant laden mislukt:", e));
   }, []);
 
   useEffect(() => {
@@ -81,7 +88,7 @@ export function App() {
       {active ? (
         <MiniAppView app={active} session={session} gate={gate} onClose={closeMiniApp} />
       ) : (
-        <HomeScreen catalog={catalog} onOpen={setActive} />
+        <HomeScreen catalog={catalog} onOpen={setActive} title={tenantName} />
       )}
       {permReq && (
         <PermissionDialog

@@ -2,11 +2,11 @@ import type { PleinManifest } from "@openplein/sdk";
 import { t } from "../i18n";
 
 export function HomeScreen(props: {
-  catalog: PleinManifest[]; onOpen: (app: PleinManifest) => void;
+  catalog: PleinManifest[]; onOpen: (app: PleinManifest) => void; title: string;
 }) {
   return (
     <main className="home">
-      <h1>{t("home.title")}</h1>
+      <h1>{props.title}</h1>
       <h2>{t("home.discover")}</h2>
       <div className="grid">
         {props.catalog.map((app) => (
