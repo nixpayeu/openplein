@@ -20,7 +20,8 @@ export function scaffold(name: string, targetDir: string): void {
 Volgende stappen:
   1. Kopieer plein-client.js (gebundeld uit @openplein/bridge) naar de map
   2. Serveer de map, bv.: npx serve -l 5190 ${targetDir}
-  3. Voeg het manifest toe aan de catalog.json van je Plein-runtime`);
+  3. Neem het manifest over als catalogusregel in de tenantconfiguratie
+     van je Plein-installatie (geserveerd op GET /api/tenant)`);
 }
 
 // CLI-entry

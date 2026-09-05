@@ -12,8 +12,8 @@ const manifest = {
   permissions: ["storage"],
 };
 
-function antwoord(body: unknown) {
-  return { json: () => Promise.resolve(body) } as Response;
+function antwoord(body: unknown, ok = true, status = 200) {
+  return { ok, status, json: () => Promise.resolve(body) } as Response;
 }
 
 beforeEach(() => {
@@ -42,6 +42,11 @@ describe("loadTenant", () => {
   it("gooit bij een ongeldige tenantconfiguratie", async () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(antwoord({ hostname: "localhost" }))));
     await expect(loadTenant()).rejects.toThrow();
+  });
+
+  it("gooit met de statuscode bij een mislukte fetch", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(antwoord({}, false, 503))));
+    await expect(loadTenant()).rejects.toThrow(/503/);
   });
 });
 

@@ -31,6 +31,9 @@ importers:
       '@mollie/api-client':
         specifier: ^3.7.0
         version: 3.7.0
+      '@openplein/sdk':
+        specifier: workspace:*
+        version: link:../../../packages/sdk
       '@openplein/tenant':
         specifier: workspace:*
         version: link:../../../packages/tenant

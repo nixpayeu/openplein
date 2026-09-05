@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { validateTenantConfig, type TenantConfig } from "@openplein/tenant";
+import { validateManifest } from "@openplein/sdk";
 
 /**
  * Laadt de tenantconfiguratie van deze installatie. Er draait één installatie
@@ -16,5 +17,26 @@ export function loadTenantConfig(path: string, expectedHostname: string): Tenant
       `Tenantconfiguratie in ${path} is van ${r.config.hostname}, deze installatie draait op ${expectedHostname}`,
     );
   }
+  valideerCatalogus(r.config.catalog, path);
   return r.config;
+}
+
+/**
+ * Valideert elke catalogusregel als manifest (schema uit @openplein/sdk) en
+ * controleert dat alle id's uniek zijn. Zonder deze check kunnen twee
+ * catalogusregels met hetzelfde id hetzelfde pseudoniem, dezelfde opslag en
+ * elkaars permissies krijgen (zie identity.ts, storage.ts, permissions.ts).
+ */
+function valideerCatalogus(catalog: unknown[], path: string): void {
+  const gezienIds = new Set<string>();
+  catalog.forEach((regel, i) => {
+    const r = validateManifest(regel);
+    if (!r.valid) {
+      throw new Error(`Ongeldige catalogusregel ${i} in ${path}: ${r.errors.join("; ")}`);
+    }
+    if (gezienIds.has(r.manifest.id)) {
+      throw new Error(`Dubbel id "${r.manifest.id}" in de catalogus van ${path}`);
+    }
+    gezienIds.add(r.manifest.id);
+  });
 }

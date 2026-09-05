@@ -3,6 +3,7 @@ import { validateTenantConfig, type TenantConfig } from "@openplein/tenant";
 
 export async function loadTenant(): Promise<{ tenant: TenantConfig; catalog: PleinManifest[] }> {
   const res = await fetch("/api/tenant");
+  if (!res.ok) throw new Error(`Tenantconfiguratie ophalen mislukt: HTTP ${res.status}`);
   const r = validateTenantConfig(await res.json());
   if (!r.valid) throw new Error(`Ongeldige tenantconfiguratie: ${r.errors.join("; ")}`);
   return { tenant: r.config, catalog: geldigeManifests(r.config.catalog) };
