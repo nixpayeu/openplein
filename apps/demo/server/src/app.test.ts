@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { createApp } from "./app";
 
-const app = createApp({ authSecret: "test-secret", paymentsMock: true });
+const app = createApp({
+  authSecret: "test-secret",
+  paymentsMock: true,
+  tenantConfig: { hostname: "localhost", name: "Plein", catalog: [] },
+});
 let token = "";
 
 beforeAll(async () => {
@@ -29,7 +33,12 @@ describe("auth", () => {
 
 describe("demo-modus (demoShowCode)", () => {
   it("geeft de code in de response terug en die code verifieert", async () => {
-    const demoApp = createApp({ authSecret: "test-secret", paymentsMock: true, demoShowCode: true });
+    const demoApp = createApp({
+      authSecret: "test-secret",
+      paymentsMock: true,
+      demoShowCode: true,
+      tenantConfig: { hostname: "localhost", name: "Plein", catalog: [] },
+    });
     const res = await demoApp.request("/api/auth/request-code", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: "demo@example.nl" }),
@@ -76,7 +85,11 @@ describe("payments (mock)", () => {
 
 describe("brute-force-guard", () => {
   it("blokkeert na 5 foute pogingen", async () => {
-    const guardApp = createApp({ authSecret: "test-secret", paymentsMock: true });
+    const guardApp = createApp({
+      authSecret: "test-secret",
+      paymentsMock: true,
+      tenantConfig: { hostname: "localhost", name: "Plein", catalog: [] },
+    });
     await guardApp.request("/api/auth/request-code", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: "brute@example.nl" }),
@@ -99,7 +112,12 @@ describe("brute-force-guard", () => {
 
 describe("token-TTL", () => {
   it("weigert een verlopen token", async () => {
-    const expiredApp = createApp({ authSecret: "test-secret", paymentsMock: true, tokenTtlMs: -1 });
+    const expiredApp = createApp({
+      authSecret: "test-secret",
+      paymentsMock: true,
+      tokenTtlMs: -1,
+      tenantConfig: { hostname: "localhost", name: "Plein", catalog: [] },
+    });
     await expiredApp.request("/api/auth/request-code", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: "nick@example.nl" }),
@@ -114,5 +132,27 @@ describe("token-TTL", () => {
       headers: { Authorization: `Bearer ${expiredToken}` },
     });
     expect(res.status).toBe(401);
+  });
+});
+
+describe("GET /api/tenant", () => {
+  it("geeft de tenantconfiguratie terug", async () => {
+    const app = createApp({
+      authSecret: "test",
+      paymentsMock: true,
+      tenantConfig: { hostname: "localhost", name: "Digitale Autonomie", catalog: [] },
+    });
+    const res = await app.request("/api/tenant");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ name: "Digitale Autonomie" });
+  });
+
+  it("vereist geen inlog", async () => {
+    const app = createApp({
+      authSecret: "test",
+      paymentsMock: true,
+      tenantConfig: { hostname: "localhost", name: "Plein", catalog: [] },
+    });
+    expect((await app.request("/api/tenant")).status).toBe(200);
   });
 });

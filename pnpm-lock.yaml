@@ -31,6 +31,9 @@ importers:
       '@mollie/api-client':
         specifier: ^3.7.0
         version: 3.7.0
+      '@openplein/tenant':
+        specifier: workspace:*
+        version: link:../../../packages/tenant
       hono:
         specifier: ^4.4.0
         version: 4.12.32

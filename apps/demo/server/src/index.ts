@@ -1,5 +1,6 @@
 import { serve } from "@hono/node-server";
 import { createApp } from "./app";
+import { loadTenantConfig } from "./tenant";
 
 // process.env.AUTH_SECRET ?? "dev..." vangt alleen "ontbreekt helemaal" af.
 // docker-compose geeft bij een missende .env een lege string ("") door, wat
@@ -22,6 +23,10 @@ if (rawAuthSecret === undefined) {
 }
 
 const app = createApp({
+  tenantConfig: loadTenantConfig(
+    process.env.TENANT_CONFIG ?? "./tenant.json",
+    process.env.TENANT_HOSTNAME ?? "localhost",
+  ),
   authSecret,
   paymentsMock: process.env.PAYMENTS_MOCK === "1",
   mollieApiKey: process.env.MOLLIE_API_KEY,
