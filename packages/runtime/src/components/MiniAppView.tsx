@@ -27,6 +27,7 @@ export function MiniAppView(props: {
         pay: (appId, params) =>
           paymentsProvider.pay(appId, params, props.session.token, abort.signal),
         identityRequest: (appId) => identity.request(appId),
+        identityEmail: (appId) => identity.email(appId),
         storageGet: (appId, key) => storageProvider.get(appId, key),
         storageSet: (appId, key, value) => storageProvider.set(appId, key, value),
       },
