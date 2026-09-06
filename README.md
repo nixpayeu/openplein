@@ -69,7 +69,7 @@ strikte origin-checks aan beide kanten. Zie
 
 ## Quickstart
 
-Vereist: Node ≥22.13 (zie `.nvmrc`), pnpm 11.
+Vereist: Node ≥24 (zie `.nvmrc`), pnpm 11.
 
 ```bash
 pnpm install
