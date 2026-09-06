@@ -99,4 +99,14 @@ describe("LidWordenView", () => {
     expect(el.querySelector("form")).not.toBeNull();
     expect(el.querySelector("input")).not.toBeNull();
   });
+
+  it("zegt bij een 409 dat je al lid bent, niet dat het mislukt is", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(antwoord({}, false, 409))));
+    const el = render(<LidWordenView token="tok" onLid={() => {}} />);
+    const input = el.querySelector("input") as HTMLInputElement;
+    await act(async () => { typ(input, "Jan"); });
+    await act(async () => { verstuur(el); await wachtOpMicrotaken(); });
+    expect(el.textContent).toContain("al lid");
+    expect(el.textContent).not.toContain("mislukt");
+  });
 });

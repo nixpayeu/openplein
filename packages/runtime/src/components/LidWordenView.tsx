@@ -9,7 +9,9 @@ export interface Lid {
 export function LidWordenView(props: { token: string; onLid: (lid: Lid) => void }) {
   const [naam, setNaam] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
+  // Onderscheid 409 ("je bent al lid") van de rest: dezelfde melding tonen
+  // zou de bezoeker onjuist informeren.
+  const [error, setError] = useState<null | "alLid" | "mislukt">(null);
 
   async function meldAan() {
     const res = await fetch("/api/leden", {
@@ -17,8 +19,9 @@ export function LidWordenView(props: { token: string; onLid: (lid: Lid) => void 
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${props.token}` },
       body: JSON.stringify({ naam }),
     });
-    if (!res.ok) return setError(true);
-    setError(false);
+    if (res.status === 409) return setError("alLid");
+    if (!res.ok) return setError("mislukt");
+    setError(null);
     props.onLid((await res.json()) as Lid);
   }
 
@@ -39,7 +42,7 @@ export function LidWordenView(props: { token: string; onLid: (lid: Lid) => void 
         <button className="primary" disabled={busy} type="submit">
           {busy ? t("lid.busy") : t("lid.verstuur")}
         </button>
-        {error && <p className="error">{t("lid.error")}</p>}
+        {error && <p className="error">{t(error === "alLid" ? "lid.alLid" : "lid.error")}</p>}
       </form>
     </div>
   );
