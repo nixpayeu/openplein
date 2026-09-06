@@ -209,8 +209,8 @@ export function createApp(opts: Options): App {
   app.post("/api/leden", async (c) => {
     const email = emailVanRequest(c);
     if (!email) return c.body(null, 401);
-    const { naam } = await c.req.json<{ naam: string }>();
-    if (!naam?.trim()) return c.body(null, 400);
+    const { naam } = await c.req.json<{ naam: unknown }>();
+    if (typeof naam !== "string" || naam.trim() === "") return c.body(null, 400);
     if (vindOpEmail(opts.db, email)) return c.body(null, 409);
     return c.json(meldAan(opts.db, email, naam), 201);
   });

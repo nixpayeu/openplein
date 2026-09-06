@@ -23,18 +23,32 @@ if (rawAuthSecret === undefined) {
   authSecret = rawAuthSecret;
 }
 
-const app = createApp({
-  tenantConfig: loadTenantConfig(
-    process.env.TENANT_CONFIG ?? "./tenant.json",
-    process.env.TENANT_HOSTNAME ?? "localhost",
-  ),
-  db: openDb(process.env.DB_PATH ?? "./plein.db"),
-  authSecret,
-  paymentsMock: process.env.PAYMENTS_MOCK === "1",
-  mollieApiKey: process.env.MOLLIE_API_KEY,
-  publicUrl: process.env.PUBLIC_URL,
-  serveStaticAssets: process.env.SERVE_STATIC === "1",
-  demoShowCode: process.env.DEMO_SHOW_CODE === "1",
-});
+// Elke weigering om te starten (ontbrekende of verkeerde tenantconfiguratie,
+// demomodus samen met beheerders) hoort als leesbare regel in de logs te staan
+// en niet als ruwe stacktrace, net als de AUTH_SECRET-controle hierboven.
+function bouwApp() {
+  return createApp({
+    tenantConfig: loadTenantConfig(
+      process.env.TENANT_CONFIG ?? "./tenant.json",
+      process.env.TENANT_HOSTNAME ?? "localhost",
+    ),
+    db: openDb(process.env.DB_PATH ?? "./plein.db"),
+    authSecret,
+    paymentsMock: process.env.PAYMENTS_MOCK === "1",
+    mollieApiKey: process.env.MOLLIE_API_KEY,
+    publicUrl: process.env.PUBLIC_URL,
+    serveStaticAssets: process.env.SERVE_STATIC === "1",
+    demoShowCode: process.env.DEMO_SHOW_CODE === "1",
+  });
+}
+
+let app: ReturnType<typeof createApp>;
+try {
+  app = bouwApp();
+} catch (e) {
+  console.error(`[plein-demo-server] ${e instanceof Error ? e.message : e}`);
+  process.exit(1);
+}
+
 serve({ fetch: app.fetch, port: 5175 });
 console.log("[plein-demo-server] http://localhost:5175");

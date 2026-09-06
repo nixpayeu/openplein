@@ -375,6 +375,19 @@ describe("ledenroutes", () => {
     expect(res.headers.get("content-type")).toContain("text/csv");
   });
 
+  it("weigert de csv zonder inlog", async () => {
+    expect((await ledenApp().request("/api/leden.csv")).status).toBe(401);
+  });
+
+  it("weigert een naam die geen tekst is", async () => {
+    const app = ledenApp();
+    const token = await tokenVoor(app, "lid@example.org");
+    const res = await app.request("/api/leden", {
+      method: "POST", headers: met(token), body: JSON.stringify({ naam: 42 }),
+    });
+    expect(res.status).toBe(400);
+  });
+
   it("weigert de csv voor een gewoon lid", async () => {
     const app = ledenApp();
     const token = await tokenVoor(app, "lid@example.org");
