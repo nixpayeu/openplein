@@ -471,7 +471,19 @@ Run: `pnpm test && pnpm typecheck`
 Expected: alles slaagt.
 
 Run: `pnpm --filter @openplein/e2e test`
-Expected: 3/3 groen. Let op: de e2e-inlogroutine zoekt `getByLabel(/e-?mail/i)` en de knop `Stuur code`, allebei in `LoginView`, dat ongewijzigd blijft.
+Expected: 3/3 groen. Let op: de e2e-inlogroutine zoekt `getByLabel(/e-?mail/i)` en de knop `Stuur code`, allebei in `LoginView`. Die twee blijven ongewijzigd.
+
+**Correctie tijdens de uitvoering.** Een eerdere versie van dit plan zei dat `login.title` ongewijzigd bleef. Dat was fout en het maakte de taak tegenstrijdig met zichzelf: `WelcomeView` rendert `LoginView`, dus zolang die kop "Inloggen bij Plein" luidt, kan de test die eist dat er nergens "Plein" staat niet slagen. Erger nog, een uitgelogde bezoeker van een andere vereniging zou dan alsnog een vreemde merknaam zien, precies wat deze taak moet wegnemen.
+
+`login.title` wordt daarom óók tenant-eigen:
+
+- `nl.json`: `"login.title": "Inloggen bij {name}"`, `en.json`: `"Sign in to {name}"`.
+- `LoginView` krijgt een prop `name: string` en rendert `t("login.title", { name: props.name })`.
+- `WelcomeView` geeft de naam door.
+
+De e2e-assertie blijft ongewijzigd: voor de demo-tenant wordt de kop gewoon weer "Inloggen bij Plein", dus de substring bestaat nog en `exact: true` blijft nodig.
+
+Zolang de tenant nog niet geladen is, is er geen naam. Toon in dat venster geen woordmerk en geen `welcome.title`, en laat `LoginView` terugvallen op de naamloze sleutel `login.titleAnon` (`"Inloggen"` / `"Sign in"`). Anders staat er bij elke pageload even "Welkom bij " met een losse spatie op het scherm.
 
 - [ ] **Step 9: Controleer het handmatig met een tweede tenant**
 
