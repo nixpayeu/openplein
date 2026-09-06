@@ -3,4 +3,5 @@ dist/
 .env
 *.local
 test-results/
+playwright-report/
 .superpowers/
