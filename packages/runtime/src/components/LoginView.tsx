@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Session } from "../App";
 import { t } from "../i18n";
 
-export function LoginView(props: { onLogin: (s: Session) => void }) {
+export function LoginView(props: { onLogin: (s: Session) => void; name: string }) {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [stage, setStage] = useState<"email" | "code">("email");
@@ -45,7 +45,7 @@ export function LoginView(props: { onLogin: (s: Session) => void }) {
 
   return (
     <div className="login" id="start">
-      <h1>{t("login.title")}</h1>
+      <h1>{t("login.title", { name: props.name })}</h1>
       <form onSubmit={(e) => { e.preventDefault(); void submit(); }}>
         {stage === "email" ? (
           <>
