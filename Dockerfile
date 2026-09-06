@@ -1,4 +1,4 @@
-FROM node:22-alpine AS build
+FROM node:24-alpine AS build
 RUN corepack enable
 WORKDIR /app
 COPY . .
@@ -8,7 +8,7 @@ RUN pnpm install --frozen-lockfile && pnpm --filter @openplein/runtime build \
  && cp packages/bridge/dist/plein-client.js apps/demo/miniapps/betalen/ \
  && cp deploy/tenant.saig.json apps/demo/server/tenant.json
 
-FROM node:22-alpine
+FROM node:24-alpine
 RUN corepack enable
 WORKDIR /app
 COPY --from=build /app .
