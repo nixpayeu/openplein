@@ -66,4 +66,15 @@ describe("applyTenantBranding", () => {
     applyTenantBranding({ hostname: "localhost", name: "Plein", catalog: [] });
     expect(document.documentElement.style.getPropertyValue("--mint")).toBe("");
   });
+
+  it("zet de theme-color-meta op de kleur van de tenant", () => {
+    const meta = document.createElement("meta");
+    meta.setAttribute("name", "theme-color");
+    document.head.appendChild(meta);
+    applyTenantBranding({
+      hostname: "localhost", name: "Plein", catalog: [], colors: { "navy-1": "#101820" },
+    });
+    expect(meta.getAttribute("content")).toBe("#101820");
+    meta.remove();
+  });
 });

@@ -41,6 +41,18 @@ export function createApp(opts: Options): App {
   // Publiek: de shell heeft naam, kleuren en catalogus nodig vóór de inlog.
   app.get("/api/tenant", (c) => c.json(opts.tenantConfig));
 
+  // Het webmanifest hoort bij de tenant, niet bij de build: één image bedient
+  // alle tenants, dus de naam op het beginscherm komt hiervandaan.
+  app.get("/api/manifest.webmanifest", (c) => {
+    const kleur = opts.tenantConfig.colors?.["navy-1"] ?? "#070F1C";
+    return c.json({
+      name: opts.tenantConfig.name, short_name: opts.tenantConfig.name,
+      start_url: "/", display: "standalone",
+      theme_color: kleur, background_color: kleur,
+      icons: [{ src: opts.tenantConfig.logoUrl ?? "/icon-512.png", sizes: "512x512", type: "image/png" }],
+    }, 200, { "Content-Type": "application/manifest+json" });
+  });
+
   const sign = (email: string, ts: number) => {
     const payload = Buffer.from(`${email}|${ts}`).toString("base64url");
     const mac = createHmac("sha256", opts.authSecret).update(payload).digest("base64url");
