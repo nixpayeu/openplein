@@ -19,6 +19,36 @@
         "wit": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
       }
     },
-    "catalog": { "type": "array", "items": { "type": "object" } }
+    "catalog": { "type": "array", "items": { "type": "object" } },
+    "welcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "nl": { "$ref": "#/$defs/welcomeText" },
+        "en": { "$ref": "#/$defs/welcomeText" }
+      }
+    }
+  },
+  "$defs": {
+    "welcomeText": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intro"],
+      "properties": {
+        "intro": { "type": "string", "minLength": 1 },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["title", "items"],
+            "properties": {
+              "title": { "type": "string", "minLength": 1 },
+              "items": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+            }
+          }
+        }
+      }
+    }
   }
 }
