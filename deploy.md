@@ -75,6 +75,14 @@ starten (`process.exit(1)`) in plaats van door te draaien met een lege
 HMAC-sleutel — check `docker compose logs openplein` als de container direct
 stopt na `up`.
 
+**`DB_PATH`** hoeft niet in `.env`: `docker-compose.yml` zet hem al op
+`/app/data/plein.db`, binnen het gemounte volume `openplein-data`. Dat
+bestand is de ledenadministratie (namen, e-mailadressen, aanmeldstatus) —
+**dit volume hoort in de back-up.** Zonder dat volume overleeft de database
+geen herstart of rebuild van de container en is bij de eerstvolgende deploy
+elk lid weg. Lokaal (buiten Docker) bepaalt `DB_PATH` hetzelfde, met
+`./plein.db` als standaard relatief aan `apps/demo/server`.
+
 ## 2b. Tenantconfiguratie: verplicht, per installatie
 
 **Het Docker-image is tenant-neutraal**: er zit géén tenantconfiguratie in
@@ -242,3 +250,6 @@ docker compose down
 # vorige commit uitchecken/rsyncen, dan opnieuw:
 docker compose up -d --build
 ```
+
+**Nooit `docker compose down -v`** hier: de `-v` verwijdert ook het
+`openplein-data`-volume, en daarmee de hele ledenadministratie.

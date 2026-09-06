@@ -1,10 +1,14 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
+import type { DatabaseSync } from "node:sqlite";
 import type { TenantConfig } from "@openplein/tenant";
+import { isAdmin } from "@openplein/tenant";
+import { meldAan, vindOpEmail, alleLeden, alsCsv } from "./leden";
 
 interface Options {
   tenantConfig: TenantConfig;
+  db: DatabaseSync;
   authSecret: string; paymentsMock: boolean; mollieApiKey?: string; publicUrl?: string;
   tokenTtlMs?: number;
   /**
@@ -46,6 +50,15 @@ function iconFor(logoUrl: string | undefined): { src: string; sizes: string; typ
 }
 
 export function createApp(opts: Options): App {
+  // In demomodus staat de inlogcode op het scherm, dus is identiteit
+  // betekenisloos. Met beheerders erbij zou iedere bezoeker het ledenregister
+  // kunnen lezen. Die combinatie weigeren we.
+  if (opts.demoShowCode && opts.tenantConfig.admins?.length) {
+    throw new Error(
+      "Demomodus en beheerders kunnen niet samen: in demomodus kan iedereen elk e-mailadres zijn.",
+    );
+  }
+
   const app = new Hono() as App;
   const tokenTtlMs = opts.tokenTtlMs ?? DEFAULT_TOKEN_TTL_MS;
   const codes = new Map<string, { code: string; expires: number; attempts: number }>();
@@ -54,7 +67,11 @@ export function createApp(opts: Options): App {
   const MAX_MOCK_PAYMENTS = 1000;
 
   // Publiek: de shell heeft naam, kleuren en catalogus nodig vóór de inlog.
-  app.get("/api/tenant", (c) => c.json(opts.tenantConfig));
+  // `admins` (e-mailadressen van bestuursleden) is geen publieke informatie.
+  app.get("/api/tenant", (c) => {
+    const { admins: _admins, ...publiek } = opts.tenantConfig;
+    return c.json(publiek);
+  });
 
   // Het webmanifest hoort bij de tenant, niet bij de build: het image is
   // tenant-neutraal (zie Dockerfile/docker-compose.yml), de tenantconfiguratie
@@ -89,6 +106,17 @@ export function createApp(opts: Options): App {
     if (!Number.isFinite(ts) || Date.now() - ts > tokenTtlMs) return false;
     return true;
   };
+  // Hergebruikt verifyToken voor de HMAC-/TTL-controle; leest daarna alleen
+  // het al-gevalideerde e-mailadres uit de payload. Zo bestaat er maar één
+  // plek die bepaalt of een token geldig is.
+  const emailUitToken = (token: string | undefined): string | null => {
+    if (!verifyToken(token)) return null;
+    const payload = token!.split(".")[0];
+    const decoded = Buffer.from(payload, "base64url").toString();
+    return decoded.slice(0, decoded.lastIndexOf("|"));
+  };
+  const emailVanRequest = (c: Context): string | null =>
+    emailUitToken(c.req.header("Authorization")?.replace(/^Bearer /, ""));
 
   app.post("/api/auth/request-code", async (c) => {
     const { email } = await c.req.json<{ email: string }>();
@@ -169,6 +197,38 @@ export function createApp(opts: Options): App {
     const mollie = createMollieClient({ apiKey: opts.mollieApiKey! });
     const payment = await mollie.payments.get(id);
     return c.json({ status: payment.status });
+  });
+
+  app.get("/api/leden/mij", (c) => {
+    const email = emailVanRequest(c);
+    if (!email) return c.body(null, 401);
+    const lid = vindOpEmail(opts.db, email);
+    return lid ? c.json(lid) : c.body(null, 404);
+  });
+
+  app.post("/api/leden", async (c) => {
+    const email = emailVanRequest(c);
+    if (!email) return c.body(null, 401);
+    const { naam } = await c.req.json<{ naam: string }>();
+    if (!naam?.trim()) return c.body(null, 400);
+    if (vindOpEmail(opts.db, email)) return c.body(null, 409);
+    return c.json(meldAan(opts.db, email, naam), 201);
+  });
+
+  // Ledenlijst en -export zijn alleen voor beheerders: e-mailadres uit het
+  // token moet voorkomen in `tenantConfig.admins`.
+  app.get("/api/leden", (c) => {
+    const email = emailVanRequest(c);
+    if (!email) return c.body(null, 401);
+    if (!isAdmin(opts.tenantConfig, email)) return c.body(null, 403);
+    return c.json(alleLeden(opts.db));
+  });
+
+  app.get("/api/leden.csv", (c) => {
+    const email = emailVanRequest(c);
+    if (!email) return c.body(null, 401);
+    if (!isAdmin(opts.tenantConfig, email)) return c.body(null, 403);
+    return c.body(alsCsv(alleLeden(opts.db)), 200, { "Content-Type": "text/csv" });
   });
 
   if (opts.serveStaticAssets) {

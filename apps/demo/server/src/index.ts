@@ -1,6 +1,7 @@
 import { serve } from "@hono/node-server";
 import { createApp } from "./app";
 import { loadTenantConfig } from "./tenant";
+import { openDb } from "./db";
 
 // process.env.AUTH_SECRET ?? "dev..." vangt alleen "ontbreekt helemaal" af.
 // docker-compose geeft bij een missende .env een lege string ("") door, wat
@@ -27,6 +28,7 @@ const app = createApp({
     process.env.TENANT_CONFIG ?? "./tenant.json",
     process.env.TENANT_HOSTNAME ?? "localhost",
   ),
+  db: openDb(process.env.DB_PATH ?? "./plein.db"),
   authSecret,
   paymentsMock: process.env.PAYMENTS_MOCK === "1",
   mollieApiKey: process.env.MOLLIE_API_KEY,

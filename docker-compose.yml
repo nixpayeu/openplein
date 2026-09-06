@@ -6,6 +6,10 @@ services:
     # wordt hier gemount, niet in het image gebakken. Zie deploy.md.
     volumes:
       - ./deploy/tenant.saig.json:/app/tenant.json:ro
+      # De ledenadministratie (SQLite) moet een herstart/rebuild van de
+      # container overleven: zonder dit volume is elk lid weg bij de
+      # eerstvolgende deploy. Dit volume hoort in de back-up, zie deploy.md.
+      - openplein-data:/app/data
     environment:
       AUTH_SECRET: ${AUTH_SECRET}
       MOLLIE_API_KEY: ${MOLLIE_API_KEY}
@@ -14,9 +18,13 @@ services:
       DEMO_SHOW_CODE: ${DEMO_SHOW_CODE:-0}
       TENANT_CONFIG: /app/tenant.json
       TENANT_HOSTNAME: plein.sovereignaigrid.nl
+      DB_PATH: /app/data/plein.db
     ports:
       - "127.0.0.1:5175:5175"
     networks: [proxy]
+
+volumes:
+  openplein-data:
 
 networks:
   proxy:
