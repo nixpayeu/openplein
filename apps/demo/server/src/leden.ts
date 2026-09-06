@@ -7,9 +7,13 @@ export interface Lid {
   id: string; email: string; naam: string; status: LidStatus; aangemeldOp: string;
 }
 
-interface Rij {
+// Bewust een `type` en geen `interface`: een type-alias krijgt een impliciete
+// indexsignatuur, waardoor de rij uit node:sqlite er rechtstreeks naartoe gecast
+// kan worden. Bij een `interface` faalt dat met TS2352 en zou er een dubbele
+// cast via `unknown` nodig zijn, en die schakelt de typecontrole helemaal uit.
+type Rij = {
   id: string; email: string; naam: string; status: string; aangemeld_op: string;
-}
+};
 
 const naarLid = (r: Rij): Lid => ({
   id: r.id, email: r.email, naam: r.naam,
@@ -29,7 +33,7 @@ export function meldAan(db: DatabaseSync, email: string, naam: string): Lid {
 
 export function vindOpEmail(db: DatabaseSync, email: string): Lid | null {
   const r = db.prepare("SELECT * FROM leden WHERE email = ?").get(email.trim().toLowerCase());
-  return r ? naarLid(r as unknown as Rij) : null;
+  return r ? naarLid(r as Rij) : null;
 }
 
 export function zetStatus(db: DatabaseSync, id: string, status: LidStatus): void {
@@ -39,7 +43,7 @@ export function zetStatus(db: DatabaseSync, id: string, status: LidStatus): void
 
 export function alleLeden(db: DatabaseSync): Lid[] {
   const rijen = db.prepare("SELECT * FROM leden ORDER BY aangemeld_op ASC").all();
-  return (rijen as unknown as Rij[]).map(naarLid);
+  return (rijen as Rij[]).map(naarLid);
 }
 
 /** Een naam mag komma's en aanhalingstekens bevatten; die mogen geen kolom opschuiven. */
