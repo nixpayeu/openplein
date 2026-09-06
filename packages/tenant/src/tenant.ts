@@ -16,6 +16,7 @@ export interface TenantConfig {
   colors?: Partial<Record<TenantColor, string>>;
   catalog: unknown[];
   welcome?: Partial<Record<"nl" | "en", WelcomeText>>;
+  admins?: string[];
 }
 
 const ajv = new Ajv({ allErrors: true });
@@ -39,4 +40,14 @@ export function welcomeFor(config: TenantConfig, locale: "nl" | "en"): WelcomeTe
   const w = config.welcome;
   if (!w) return null;
   return w[locale] ?? w[locale === "nl" ? "en" : "nl"] ?? null;
+}
+
+/**
+ * Bestuursleden staan als e-mailadres in de tenantconfiguratie, niet als rol
+ * in de database: een vereniging beheert ze dan in hetzelfde bestand als de
+ * rest. Hoofdletterongevoelig, want adressen worden met de hand ingetypt.
+ */
+export function isAdmin(config: TenantConfig, email: string): boolean {
+  const gezocht = email.trim().toLowerCase();
+  return (config.admins ?? []).some((a) => a.trim().toLowerCase() === gezocht);
 }

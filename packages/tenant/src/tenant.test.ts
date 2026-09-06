@@ -106,3 +106,52 @@ describe("welcomeFor", () => {
     expect(welcomeFor(r.config, "nl")).toBeNull();
   });
 });
+
+import { isAdmin } from "./tenant";
+
+const metBeheerders = {
+  hostname: "plein.example.org",
+  name: "Voorbeeld",
+  catalog: [],
+  admins: ["tim@example.org", "bestuur@example.org"],
+};
+
+describe("admins in de tenantconfiguratie", () => {
+  it("accepteert een lijst beheerders", () => {
+    expect(validateTenantConfig(metBeheerders).valid).toBe(true);
+  });
+
+  it("weigert een lege lijst", () => {
+    expect(validateTenantConfig({ ...metBeheerders, admins: [] }).valid).toBe(false);
+  });
+
+  it("weigert een leeg adres in de lijst", () => {
+    expect(validateTenantConfig({ ...metBeheerders, admins: [""] }).valid).toBe(false);
+  });
+});
+
+describe("isAdmin", () => {
+  const config = (() => {
+    const r = validateTenantConfig(metBeheerders);
+    if (!r.valid) throw new Error("configuratie zou geldig moeten zijn");
+    return r.config;
+  })();
+
+  it("herkent een beheerder", () => {
+    expect(isAdmin(config, "tim@example.org")).toBe(true);
+  });
+
+  it("vergelijkt hoofdletterongevoelig", () => {
+    expect(isAdmin(config, "Tim@Example.org")).toBe(true);
+  });
+
+  it("wijst een gewoon lid af", () => {
+    expect(isAdmin(config, "lid@example.org")).toBe(false);
+  });
+
+  it("wijst iedereen af als er geen beheerders zijn", () => {
+    const r = validateTenantConfig({ hostname: "localhost", name: "Plein", catalog: [] });
+    if (!r.valid) throw new Error("configuratie zou geldig moeten zijn");
+    expect(isAdmin(r.config, "tim@example.org")).toBe(false);
+  });
+});
