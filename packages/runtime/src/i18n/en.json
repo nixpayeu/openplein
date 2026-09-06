@@ -19,5 +19,5 @@
   "lid.verstuur": "Sign up", "lid.busy": "Working…", "lid.error": "Sign-up failed", "lid.alLid": "You are already a member of this association.",
   "leden.title": "Members", "leden.naam": "Name", "leden.email": "Email address", "leden.status": "Status",
   "leden.leeg": "There are no members yet.", "leden.geenToegang": "You do not have access to the member register.",
-  "leden.download": "Download as csv"
+  "leden.download": "Download as csv", "leden.downloadMislukt": "Downloading the csv failed."
 }

@@ -19,5 +19,5 @@
   "lid.verstuur": "Aanmelden", "lid.busy": "Bezig…", "lid.error": "Aanmelden mislukt", "lid.alLid": "Je bent al lid van deze vereniging.",
   "leden.title": "Leden", "leden.naam": "Naam", "leden.email": "E-mailadres", "leden.status": "Status",
   "leden.leeg": "Er zijn nog geen leden.", "leden.geenToegang": "Je hebt geen toegang tot het ledenregister.",
-  "leden.download": "Download als csv"
+  "leden.download": "Download als csv", "leden.downloadMislukt": "Downloaden van de csv is mislukt."
 }

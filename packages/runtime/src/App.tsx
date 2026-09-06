@@ -133,7 +133,12 @@ export function App() {
             <LedenView token={session.token} onClose={() => setToonLeden(false)} />
           ) : (
             <>
-              {lidStatus === "geenLid" && (
+              {/* Opt-in per tenant: zonder `ledenregister: true` bestaat het
+                  aanmeldformulier voor deze installatie niet, ook niet voor
+                  een bezoeker die nog geen lid is. De server wijst
+                  `/api/leden` sowieso af (zie app.ts), maar het formulier
+                  tonen zou alsnog een valse belofte zijn. */}
+              {tenant?.ledenregister === true && lidStatus === "geenLid" && (
                 <LidWordenView token={session.token} onLid={() => setLidStatus("lid")} />
               )}
               <HomeScreen

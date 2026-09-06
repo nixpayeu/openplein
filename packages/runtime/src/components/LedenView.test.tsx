@@ -86,11 +86,31 @@ describe("LedenView", () => {
     const el = render(<LedenView token="geheime-token" onClose={() => {}} />);
     await act(async () => { await wachtOpMicrotaken(); });
     const knop = Array.from(el.querySelectorAll("button")).find((b) => b.textContent?.includes("csv"))!;
-    await act(async () => { knop.click(); await wachtOpMicrotaken(); });
+    await act(async () => {
+      knop.click();
+      await wachtOpMicrotaken();
+      // De opruimcode gebruikt setTimeout(..., 0) (zie LedenView.tsx) i.p.v.
+      // een synchrone revoke; een echte macrotaak-tik is dus nodig om die af
+      // te wachten vóórdat de test klaar is — anders vuurt hij pas tijdens
+      // een volgend testbestand af, ná het opruimen van deze URL-stub.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
     const laatsteAanroep = fetchMock.mock.calls.at(-1) as unknown as [string, RequestInit];
     expect(laatsteAanroep[0]).toBe("/api/leden.csv");
     expect((laatsteAanroep[1].headers as Record<string, string>).Authorization).toBe("Bearer geheime-token");
     expect(createObjectURL).toHaveBeenCalled();
     expect(revokeObjectURL).toHaveBeenCalledWith("blob:mock-url");
+  });
+
+  it("toont een foutmelding als het ophalen van de csv mislukt, in plaats van niets te doen", async () => {
+    const fetchMock = vi.fn((url: string) =>
+      Promise.resolve(url === "/api/leden.csv" ? antwoord(null, false, 401) : antwoord(leden)),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const el = render(<LedenView token="verlopen-token" onClose={() => {}} />);
+    await act(async () => { await wachtOpMicrotaken(); });
+    const knop = Array.from(el.querySelectorAll("button")).find((b) => b.textContent?.includes("csv"))!;
+    await act(async () => { knop.click(); await wachtOpMicrotaken(); });
+    expect(el.textContent).toContain("mislukt");
   });
 });

@@ -73,4 +73,13 @@ describe("alsCsv", () => {
     const regel = alsCsv(alleLeden(db)).split("\n")[1];
     expect(regel).toContain('"Tim, de ""echte"""');
   });
+
+  it("beveiligt een naam die met een = begint tegen csv-formule-injectie", () => {
+    meldAan(db, "tim@example.org", '=HYPERLINK("https://kwaadaardig/","klik")');
+    const regel = alsCsv(alleLeden(db)).split("\n")[1];
+    // Een apostrof vóór de = voorkomt dat Excel/LibreOffice dit als formule
+    // uitvoert zodra de aanhalingstekens eromheen worden weggehaald.
+    expect(regel).toContain('"\'=HYPERLINK(""https://kwaadaardig/"",""klik"")"');
+    expect(regel.startsWith('"=')).toBe(false);
+  });
 });

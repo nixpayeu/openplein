@@ -86,31 +86,60 @@ describe("payments (mock)", () => {
   });
 });
 
+function guardApp() {
+  return createApp({
+    authSecret: "test-secret", paymentsMock: true, db: openDb(":memory:"),
+    tenantConfig: { hostname: "localhost", name: "Plein", catalog: [] },
+    // Klein gehouden zodat de tests geen 20 aanvragen hoeven te doen; het
+    // gedrag dat getest wordt (de teller overleeft een nieuwe aanvraag) is
+    // onafhankelijk van de gekozen grens.
+    maxVerifyAttempts: 5, verifyBlockDurationMs: 60_000,
+  });
+}
+
+async function vraagCode(app: ReturnType<typeof createApp>, email: string): Promise<void> {
+  await app.request("/api/auth/request-code", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+}
+
+async function verifieer(app: ReturnType<typeof createApp>, email: string, code: string) {
+  return app.request("/api/auth/verify", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, code }),
+  });
+}
+
 describe("brute-force-guard", () => {
-  it("blokkeert na 5 foute pogingen", async () => {
-    const guardApp = createApp({
-      authSecret: "test-secret",
-      paymentsMock: true,
-      db: openDb(":memory:"),
-      tenantConfig: { hostname: "localhost", name: "Plein", catalog: [] },
-    });
-    await guardApp.request("/api/auth/request-code", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: "brute@example.nl" }),
-    });
-    const correctCode = guardApp.debugLastCode!;
+  it("blokkeert na 5 foute pogingen, ook met de juiste code daarna", async () => {
+    const app = guardApp();
+    await vraagCode(app, "brute@example.nl");
+    const correctCode = app.debugLastCode!;
     for (let i = 0; i < 5; i++) {
-      const res = await guardApp.request("/api/auth/verify", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "brute@example.nl", code: "000000" }),
-      });
-      expect(res.status).toBe(401);
+      expect((await verifieer(app, "brute@example.nl", "000000")).status).toBe(401);
     }
-    const res = await guardApp.request("/api/auth/verify", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: "brute@example.nl", code: correctCode }),
-    });
-    expect(res.status).toBe(401);
+    // "000000" kan nooit de echte code zijn (randInt start bij 100000), dus
+    // dit bewijst dat de blokkade actief is, niet dat de code toevallig fout is.
+    expect((await verifieer(app, "brute@example.nl", correctCode)).status).toBe(401);
+  });
+
+  it("een nieuwe code aanvragen zet de pogingenteller niet terug", async () => {
+    const app = guardApp();
+    const email = "opnieuw@example.nl";
+    // Vier foute pogingen, elk na een eigen nieuwe code-aanvraag: als het
+    // aanvragen van een nieuwe code de teller zou terugzetten (het lek),
+    // zou het adres hierna nooit geblokkeerd raken.
+    for (let i = 0; i < 4; i++) {
+      await vraagCode(app, email);
+      expect((await verifieer(app, email, "000000")).status).toBe(401);
+    }
+    await vraagCode(app, email);
+    const correctCode = app.debugLastCode!;
+    // Vijfde foute poging: dit moet de grens raken en blokkeren, wat alleen
+    // klopt als de vier eerdere pogingen zijn blijven meetellen.
+    expect((await verifieer(app, email, "000000")).status).toBe(401);
+    expect((await verifieer(app, email, correctCode)).status).toBe(401);
   });
 });
 
@@ -251,11 +280,26 @@ describe("demomodus en beheerders sluiten elkaar uit", () => {
       }),
     ).toThrow(/demo/i);
   });
+
+  // AUTH_SECRET=e2e opent /api/auth/debug-last-code zonder authenticatie: een
+  // tweede deur naar dezelfde inlogcode als demomodus, dus dezelfde weigering.
+  it("weigert een configuratie met beheerders én AUTH_SECRET=e2e", () => {
+    expect(() =>
+      createApp({
+        authSecret: "e2e", paymentsMock: true,
+        db: openDb(":memory:"),
+        tenantConfig: {
+          hostname: "localhost", name: "Plein", catalog: [],
+          admins: ["tim@example.org"],
+        },
+      }),
+    ).toThrow(/e2e/i);
+  });
 });
 
 const ledenTenant = {
   hostname: "localhost", name: "Vereniging", catalog: [],
-  admins: ["bestuur@example.org"],
+  admins: ["bestuur@example.org"], ledenregister: true,
 };
 
 function ledenApp() {
@@ -388,6 +432,28 @@ describe("ledenroutes", () => {
     expect(res.status).toBe(400);
   });
 
+  it("weigert een naam boven de 200 tekens", async () => {
+    const app = ledenApp();
+    const token = await tokenVoor(app, "lid@example.org");
+    const res = await app.request("/api/leden", {
+      method: "POST", headers: met(token), body: JSON.stringify({ naam: "a".repeat(201) }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("weigert een naam die na verwijdering van onzichtbare tekens leeg is", async () => {
+    const app = ledenApp();
+    const token = await tokenVoor(app, "lid@example.org");
+    // Zero-width spaces: onzichtbaar, maar niet leeg voor trim(). Via
+    // fromCharCode geschreven zodat het teken niet als onzichtbare
+    // brontekst in dit bestand hoeft te staan.
+    const alleenZeroWidthSpaces = String.fromCharCode(0x200b, 0x200b, 0x200b);
+    const res = await app.request("/api/leden", {
+      method: "POST", headers: met(token), body: JSON.stringify({ naam: alleenZeroWidthSpaces }),
+    });
+    expect(res.status).toBe(400);
+  });
+
   it("weigert de csv voor een gewoon lid", async () => {
     const app = ledenApp();
     const token = await tokenVoor(app, "lid@example.org");
@@ -412,5 +478,56 @@ describe("ledenroutes", () => {
     const res = await app.request("/api/leden/beheerder", { headers: met(token) });
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ beheerder: true });
+  });
+});
+
+// Beide meegeleverde tenantconfiguraties (apps/demo/server/tenant.json en
+// deploy/tenant.saig.json) hebben géén ledenregister: dit is dus het
+// standaardgedrag voor elke bestaande installatie, niet een uitzondering.
+// De shell verbergen is geen beveiliging, dus dit moet ook zonder shell
+// (rechtstreeks op de route) een 403 geven — met een geldig token.
+describe("geen ledenregister zonder ledenregister: true in de tenantconfiguratie", () => {
+  function appZonderRegister(admins?: string[]) {
+    return createApp({
+      authSecret: "test-secret", paymentsMock: true, db: openDb(":memory:"),
+      tenantConfig: { hostname: "localhost", name: "Vereniging", catalog: [], admins },
+    });
+  }
+
+  it("weigert POST /api/leden met 403, ook met een geldig token", async () => {
+    const app = appZonderRegister();
+    const token = await tokenVoor(app, "lid@example.org");
+    const res = await app.request("/api/leden", {
+      method: "POST", headers: met(token), body: JSON.stringify({ naam: "Tim" }),
+    });
+    expect(res.status).toBe(403);
+  });
+
+  it("weigert GET /api/leden met 403, zelfs voor een beheerder", async () => {
+    const app = appZonderRegister(["bestuur@example.org"]);
+    const token = await tokenVoor(app, "bestuur@example.org");
+    expect((await app.request("/api/leden", { headers: met(token) })).status).toBe(403);
+  });
+
+  it("weigert GET /api/leden.csv met 403, zelfs voor een beheerder", async () => {
+    const app = appZonderRegister(["bestuur@example.org"]);
+    const token = await tokenVoor(app, "bestuur@example.org");
+    expect((await app.request("/api/leden.csv", { headers: met(token) })).status).toBe(403);
+  });
+
+  it("weigert GET /api/leden/mij met 403", async () => {
+    const app = appZonderRegister();
+    const token = await tokenVoor(app, "lid@example.org");
+    expect((await app.request("/api/leden/mij", { headers: met(token) })).status).toBe(403);
+  });
+
+  it("weigert GET /api/leden/beheerder met 403", async () => {
+    const app = appZonderRegister(["bestuur@example.org"]);
+    const token = await tokenVoor(app, "bestuur@example.org");
+    expect((await app.request("/api/leden/beheerder", { headers: met(token) })).status).toBe(403);
+  });
+
+  it("weigert ook zonder inlog (403 vóór 401, want de route bestaat functioneel niet)", async () => {
+    expect((await appZonderRegister().request("/api/leden")).status).toBe(403);
   });
 });

@@ -17,6 +17,13 @@ export interface TenantConfig {
   catalog: unknown[];
   welcome?: Partial<Record<"nl" | "en", WelcomeText>>;
   admins?: string[];
+  /**
+   * Opt-in per installatie: zonder dit veld (of op `false`) bestaat het
+   * ledenregister voor deze tenant niet, ook niet als de server code en
+   * database ervoor heeft. Standaard uit, want een installatie zonder
+   * beheerders kan een register dat wél aanstaat niet inzien of opschonen.
+   */
+  ledenregister?: boolean;
 }
 
 const ajv = new Ajv({ allErrors: true });

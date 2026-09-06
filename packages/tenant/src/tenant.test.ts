@@ -130,6 +130,24 @@ describe("admins in de tenantconfiguratie", () => {
   });
 });
 
+describe("ledenregister in de tenantconfiguratie", () => {
+  it("accepteert ledenregister: true", () => {
+    const r = validateTenantConfig({ ...metBeheerders, ledenregister: true });
+    expect(r.valid).toBe(true);
+  });
+
+  it("accepteert een configuratie zonder ledenregister (standaard uit)", () => {
+    const r = validateTenantConfig({ hostname: "localhost", name: "Plein", catalog: [] });
+    expect(r.valid).toBe(true);
+    if (r.valid) expect(r.config.ledenregister).toBeUndefined();
+  });
+
+  it("weigert ledenregister als het geen boolean is", () => {
+    const r = validateTenantConfig({ ...metBeheerders, ledenregister: "aan" });
+    expect(r.valid).toBe(false);
+  });
+});
+
 describe("isAdmin", () => {
   const config = (() => {
     const r = validateTenantConfig(metBeheerders);
