@@ -206,6 +206,17 @@ export function createApp(opts: Options): App {
     return lid ? c.json(lid) : c.body(null, 404);
   });
 
+  // Losse route i.p.v. een veld op /api/leden/mij: die route gaat over het
+  // eigen lidmaatschap en geeft 404 zonder record, terwijl een bestuurslid
+  // geen lid hoeft te zijn. Eén route, één betekenis; de shell gebruikt dit
+  // alleen om de knop naar het ledenregister te tonen, niet als beveiliging
+  // (die zit op /api/leden en /api/leden.csv zelf).
+  app.get("/api/leden/beheerder", (c) => {
+    const email = emailVanRequest(c);
+    if (!email) return c.body(null, 401);
+    return c.json({ beheerder: isAdmin(opts.tenantConfig, email) });
+  });
+
   app.post("/api/leden", async (c) => {
     const email = emailVanRequest(c);
     if (!email) return c.body(null, 401);

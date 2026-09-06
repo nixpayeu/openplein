@@ -3,10 +3,14 @@ import { t } from "../i18n";
 
 export function HomeScreen(props: {
   catalog: PleinManifest[]; onOpen: (app: PleinManifest) => void; title: string;
+  beheerder?: boolean; onOpenLeden?: () => void;
 }) {
   return (
     <main className="home">
       <h1>{props.title}</h1>
+      {props.beheerder && props.onOpenLeden && (
+        <button className="leden-link" onClick={props.onOpenLeden}>{t("leden.title")}</button>
+      )}
       <h2>{t("home.discover")}</h2>
       <div className="grid">
         {props.catalog.map((app) => (

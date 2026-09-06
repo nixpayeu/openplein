@@ -8,6 +8,7 @@ import { MiniAppView } from "./components/MiniAppView";
 import { PermissionDialog } from "./components/PermissionDialog";
 import { WelcomeView } from "./components/WelcomeView";
 import { LidWordenView } from "./components/LidWordenView";
+import { LedenView } from "./components/LedenView";
 import { t } from "./i18n";
 
 export interface Session { email: string; token: string }
@@ -40,6 +41,8 @@ export function App() {
   // "onbekend" zolang de statuscheck nog loopt: dat voorkomt dat het
   // aanmeldformulier even opflitst voor iemand die al lid is.
   const [lidStatus, setLidStatus] = useState<"onbekend" | "lid" | "geenLid">("onbekend");
+  const [beheerder, setBeheerder] = useState(false);
+  const [toonLeden, setToonLeden] = useState(false);
 
   useEffect(() => {
     if (!session) return;
@@ -50,6 +53,19 @@ export function App() {
         // overbodig aanmeldformulier is minder erg dan een leeg scherm.
         console.warn("Lidmaatschap ophalen mislukt:", e);
         setLidStatus("geenLid");
+      });
+  }, [session]);
+
+  useEffect(() => {
+    if (!session) return;
+    fetch("/api/leden/beheerder", { headers: { Authorization: `Bearer ${session.token}` } })
+      .then((res) => (res.ok ? res.json() : { beheerder: false }))
+      .then((data: { beheerder: boolean }) => setBeheerder(data.beheerder))
+      .catch((e) => {
+        // Zelfde redenering als bij lidStatus: geen knop tonen is veiliger
+        // dan gokken dat iemand beheerder is.
+        console.warn("Beheerderstatus ophalen mislukt:", e);
+        setBeheerder(false);
       });
   }, [session]);
 
@@ -113,10 +129,19 @@ export function App() {
       ) : (
         <>
           {tenantError && <p className="error">{t("tenant.loadError")}</p>}
-          {lidStatus === "geenLid" && (
-            <LidWordenView token={session.token} onLid={() => setLidStatus("lid")} />
+          {toonLeden ? (
+            <LedenView token={session.token} onClose={() => setToonLeden(false)} />
+          ) : (
+            <>
+              {lidStatus === "geenLid" && (
+                <LidWordenView token={session.token} onLid={() => setLidStatus("lid")} />
+              )}
+              <HomeScreen
+                catalog={catalog} onOpen={setActive} title={tenantName}
+                beheerder={beheerder} onOpenLeden={() => setToonLeden(true)}
+              />
+            </>
           )}
-          <HomeScreen catalog={catalog} onOpen={setActive} title={tenantName} />
         </>
       )}
       {permReq && (

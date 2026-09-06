@@ -16,5 +16,8 @@
   "checkout.title": "Payment waiting", "checkout.open": "Open the payment page",
   "tenant.loadError": "The configuration could not be loaded. Please try again later.",
   "lid.title": "Become a member", "lid.naam": "Your name",
-  "lid.verstuur": "Sign up", "lid.busy": "Working…", "lid.error": "Sign-up failed", "lid.alLid": "You are already a member of this association."
+  "lid.verstuur": "Sign up", "lid.busy": "Working…", "lid.error": "Sign-up failed", "lid.alLid": "You are already a member of this association.",
+  "leden.title": "Members", "leden.naam": "Name", "leden.email": "Email address", "leden.status": "Status",
+  "leden.leeg": "There are no members yet.", "leden.geenToegang": "You do not have access to the member register.",
+  "leden.download": "Download as csv"
 }

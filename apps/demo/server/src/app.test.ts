@@ -393,4 +393,24 @@ describe("ledenroutes", () => {
     const token = await tokenVoor(app, "lid@example.org");
     expect((await app.request("/api/leden.csv", { headers: met(token) })).status).toBe(403);
   });
+
+  it("weigert /api/leden/beheerder zonder inlog", async () => {
+    expect((await ledenApp().request("/api/leden/beheerder")).status).toBe(401);
+  });
+
+  it("zegt nee tegen een gewoon lid op /api/leden/beheerder", async () => {
+    const app = ledenApp();
+    const token = await tokenVoor(app, "lid@example.org");
+    const res = await app.request("/api/leden/beheerder", { headers: met(token) });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ beheerder: false });
+  });
+
+  it("zegt ja tegen een beheerder op /api/leden/beheerder, ook zonder lidmaatschap", async () => {
+    const app = ledenApp();
+    const token = await tokenVoor(app, "bestuur@example.org");
+    const res = await app.request("/api/leden/beheerder", { headers: met(token) });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ beheerder: true });
+  });
 });
