@@ -14,5 +14,7 @@
   "perm.email": "your email address",
   "miniapp.close": "Close", "miniapp.by": "by {provider}",
   "checkout.title": "Payment waiting", "checkout.open": "Open the payment page",
-  "tenant.loadError": "The configuration could not be loaded. Please try again later."
+  "tenant.loadError": "The configuration could not be loaded. Please try again later.",
+  "lid.title": "Become a member", "lid.naam": "Your name",
+  "lid.verstuur": "Sign up", "lid.busy": "Working…", "lid.error": "Sign-up failed"
 }

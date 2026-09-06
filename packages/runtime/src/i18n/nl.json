@@ -14,5 +14,7 @@
   "perm.email": "je e-mailadres",
   "miniapp.close": "Sluiten", "miniapp.by": "door {provider}",
   "checkout.title": "Betaling wacht", "checkout.open": "Open de betaalpagina",
-  "tenant.loadError": "De configuratie kon niet geladen worden. Probeer het later opnieuw."
+  "tenant.loadError": "De configuratie kon niet geladen worden. Probeer het later opnieuw.",
+  "lid.title": "Word lid", "lid.naam": "Je naam",
+  "lid.verstuur": "Aanmelden", "lid.busy": "Bezig…", "lid.error": "Aanmelden mislukt"
 }

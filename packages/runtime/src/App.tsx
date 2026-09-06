@@ -7,6 +7,7 @@ import { HomeScreen } from "./components/HomeScreen";
 import { MiniAppView } from "./components/MiniAppView";
 import { PermissionDialog } from "./components/PermissionDialog";
 import { WelcomeView } from "./components/WelcomeView";
+import { LidWordenView } from "./components/LidWordenView";
 import { t } from "./i18n";
 
 export interface Session { email: string; token: string }
@@ -36,6 +37,21 @@ export function App() {
   const [active, setActive] = useState<PleinManifest | null>(null);
   const [permReq, setPermReq] = useState<PermissionRequest | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  // "onbekend" zolang de statuscheck nog loopt: dat voorkomt dat het
+  // aanmeldformulier even opflitst voor iemand die al lid is.
+  const [lidStatus, setLidStatus] = useState<"onbekend" | "lid" | "geenLid">("onbekend");
+
+  useEffect(() => {
+    if (!session) return;
+    fetch("/api/leden/mij", { headers: { Authorization: `Bearer ${session.token}` } })
+      .then((res) => setLidStatus(res.ok ? "lid" : "geenLid"))
+      .catch((e) => {
+        // Een randvoorziening die hapert mag het plein niet blokkeren: een
+        // overbodig aanmeldformulier is minder erg dan een leeg scherm.
+        console.warn("Lidmaatschap ophalen mislukt:", e);
+        setLidStatus("geenLid");
+      });
+  }, [session]);
 
   useEffect(() => {
     void loadTenant()
@@ -97,6 +113,9 @@ export function App() {
       ) : (
         <>
           {tenantError && <p className="error">{t("tenant.loadError")}</p>}
+          {lidStatus === "geenLid" && (
+            <LidWordenView token={session.token} onLid={() => setLidStatus("lid")} />
+          )}
           <HomeScreen catalog={catalog} onOpen={setActive} title={tenantName} />
         </>
       )}
