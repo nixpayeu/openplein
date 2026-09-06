@@ -156,3 +156,65 @@ describe("GET /api/tenant", () => {
     expect((await app.request("/api/tenant")).status).toBe(200);
   });
 });
+
+describe("GET /api/manifest.webmanifest", () => {
+  const tenantConfig = {
+    hostname: "localhost", name: "Digitale Autonomie", catalog: [],
+    colors: { "navy-1": "#101820" },
+  };
+
+  it("gebruikt de naam van de tenant", async () => {
+    const app = createApp({ authSecret: "test", paymentsMock: true, tenantConfig });
+    const res = await app.request("/api/manifest.webmanifest");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({
+      name: "Digitale Autonomie", short_name: "Digitale Autonomie",
+    });
+  });
+
+  it("serveert het juiste content-type", async () => {
+    const app = createApp({ authSecret: "test", paymentsMock: true, tenantConfig });
+    const res = await app.request("/api/manifest.webmanifest");
+    expect(res.headers.get("content-type")).toContain("application/manifest+json");
+  });
+
+  it("neemt de achtergrondkleur van de tenant over", async () => {
+    const app = createApp({ authSecret: "test", paymentsMock: true, tenantConfig });
+    const m = (await (await app.request("/api/manifest.webmanifest")).json()) as Record<string, string>;
+    expect(m.theme_color).toBe("#101820");
+    expect(m.background_color).toBe("#101820");
+  });
+
+  it("valt terug op de standaardkleur zonder tenantkleuren", async () => {
+    const app = createApp({
+      authSecret: "test", paymentsMock: true,
+      tenantConfig: { hostname: "localhost", name: "Kaal", catalog: [] },
+    });
+    const m = (await (await app.request("/api/manifest.webmanifest")).json()) as Record<string, string>;
+    expect(m.theme_color).toBe("#070F1C");
+  });
+
+  it("gebruikt image/svg+xml en sizes 'any' voor een SVG-tenantlogo", async () => {
+    const app = createApp({
+      authSecret: "test", paymentsMock: true,
+      tenantConfig: { ...tenantConfig, logoUrl: "https://example.org/logo.svg" },
+    });
+    const m = (await (await app.request("/api/manifest.webmanifest")).json()) as {
+      icons: Array<{ src: string; sizes: string; type?: string }>;
+    };
+    expect(m.icons).toEqual([
+      { src: "https://example.org/logo.svg", sizes: "any", type: "image/svg+xml" },
+    ]);
+  });
+
+  it("gebruikt het standaardicoon zonder tenantlogo", async () => {
+    const app = createApp({
+      authSecret: "test", paymentsMock: true,
+      tenantConfig: { hostname: "localhost", name: "Kaal", catalog: [] },
+    });
+    const m = (await (await app.request("/api/manifest.webmanifest")).json()) as {
+      icons: Array<{ src: string; sizes: string; type?: string }>;
+    };
+    expect(m.icons).toEqual([{ src: "/icon-512.png", sizes: "512x512", type: "image/png" }]);
+  });
+});

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateTenantConfig } from "./tenant";
+import { validateTenantConfig, welcomeFor } from "./tenant";
 
 const geldig = {
   hostname: "plein.digitaleautonomie.org",
@@ -45,5 +45,64 @@ describe("validateTenantConfig", () => {
     const r = validateTenantConfig({ hostname: "x" });
     expect(r.valid).toBe(false);
     if (!r.valid) expect(r.errors.length).toBeGreaterThan(0);
+  });
+});
+
+const metWelkom = {
+  hostname: "plein.example.org",
+  name: "Voorbeeld",
+  catalog: [],
+  welcome: {
+    nl: { intro: "Welkom bij ons.", sections: [{ title: "Wat je krijgt", items: ["Een", "Twee"] }] },
+    en: { intro: "Welcome." },
+  },
+};
+
+describe("welcome in de tenantconfiguratie", () => {
+  it("accepteert een welcome-blok in twee talen", () => {
+    expect(validateTenantConfig(metWelkom).valid).toBe(true);
+  });
+
+  it("accepteert een welcome-blok in één taal", () => {
+    const r = validateTenantConfig({ ...metWelkom, welcome: { nl: { intro: "Hoi." } } });
+    expect(r.valid).toBe(true);
+  });
+
+  it("weigert een welcome zonder intro", () => {
+    const r = validateTenantConfig({ ...metWelkom, welcome: { nl: { sections: [] } } });
+    expect(r.valid).toBe(false);
+  });
+
+  it("weigert een onbekende taal", () => {
+    const r = validateTenantConfig({ ...metWelkom, welcome: { de: { intro: "Hallo." } } });
+    expect(r.valid).toBe(false);
+  });
+
+  it("weigert een sectie zonder titel", () => {
+    const r = validateTenantConfig({
+      ...metWelkom,
+      welcome: { nl: { intro: "Hoi.", sections: [{ items: ["Een"] }] } },
+    });
+    expect(r.valid).toBe(false);
+  });
+});
+
+describe("welcomeFor", () => {
+  it("geeft de tekst van de gevraagde taal", () => {
+    const c = validateTenantConfig(metWelkom);
+    if (!c.valid) throw new Error("configuratie zou geldig moeten zijn");
+    expect(welcomeFor(c.config, "en")?.intro).toBe("Welcome.");
+  });
+
+  it("valt terug op de andere taal", () => {
+    const r = validateTenantConfig({ ...metWelkom, welcome: { nl: { intro: "Alleen NL." } } });
+    if (!r.valid) throw new Error("configuratie zou geldig moeten zijn");
+    expect(welcomeFor(r.config, "en")?.intro).toBe("Alleen NL.");
+  });
+
+  it("geeft null zonder welcome-blok", () => {
+    const r = validateTenantConfig({ hostname: "localhost", name: "Plein", catalog: [] });
+    if (!r.valid) throw new Error("configuratie zou geldig moeten zijn");
+    expect(welcomeFor(r.config, "nl")).toBeNull();
   });
 });

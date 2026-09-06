@@ -1,6 +1,80 @@
 {
   "hostname": "plein.sovereignaigrid.nl",
   "name": "Plein",
+  "welcome": {
+    "nl": {
+      "intro": "Plein is een open-source super-app: één plek waar diensten als mini-apps draaien, met jou als baas over elke permissie. Dit is de openbare demo van fase 0: alles wat je ziet werkt echt, met testgeld.",
+      "sections": [
+        {
+          "title": "Wat je krijgt",
+          "items": [
+            "Twee werkende mini-apps: een boodschappenlijstje (identiteit + opslag) en een betaal-demo via de Mollie-testomgeving.",
+            "Het echte permissiemodel: elke mini-app moet jou eerst om toestemming vragen — en weigeren werkt óók echt."
+          ]
+        },
+        {
+          "title": "Hoe het werkt",
+          "items": [
+            "Vul hieronder je e-mailadres in.",
+            "Je inlogcode verschijnt direct op het scherm — we sturen géén e-mail.",
+            "Open de mini-apps en geef of weiger permissies per actie."
+          ]
+        },
+        {
+          "title": "Wat we met je e-mailadres doen",
+          "items": [
+            "Alleen gebruikt als inlognaam voor deze demo; er wordt geen e-mail naartoe gestuurd.",
+            "Niet opgeslagen in een database en niet gebruikt voor nieuwsbrieven of marketing.",
+            "Je lijstjes en permissiekeuzes staan lokaal in je browser, niet op onze server."
+          ]
+        },
+        {
+          "title": "Wat je kunt verwachten",
+          "items": [
+            "Betalingen lopen via de Mollie-TESTomgeving: er wordt nooit echt geld afgeschreven.",
+            "Dit is een fase-0-demo: hij kan af en toe resetten of veranderen.",
+            "Meer weten of zelf een mini-app bouwen? Kijk op openplein.eu."
+          ]
+        }
+      ]
+    },
+    "en": {
+      "intro": "Plein is an open-source super-app: one place where services run as mini-apps, with you in charge of every permission. This is the public phase-0 demo: everything you see genuinely works, with test money.",
+      "sections": [
+        {
+          "title": "What you get",
+          "items": [
+            "Two working mini-apps: a shopping list (identity + storage) and a payment demo using the Mollie test environment.",
+            "The real permission model: every mini-app has to ask you first — and denying genuinely works too."
+          ]
+        },
+        {
+          "title": "How it works",
+          "items": [
+            "Enter your email address below.",
+            "Your sign-in code appears right on the screen — we do not send email.",
+            "Open the mini-apps and allow or deny permissions per action."
+          ]
+        },
+        {
+          "title": "What we do with your email address",
+          "items": [
+            "Only used as your sign-in name for this demo; no email is ever sent to it.",
+            "Not stored in a database and never used for newsletters or marketing.",
+            "Your lists and permission choices live locally in your browser, not on our server."
+          ]
+        },
+        {
+          "title": "What to expect",
+          "items": [
+            "Payments use the Mollie TEST environment: no real money is ever charged.",
+            "This is a phase-0 demo: it may occasionally reset or change.",
+            "Want to learn more or build a mini-app? Visit openplein.eu."
+          ]
+        }
+      ]
+    }
+  },
   "catalog": [
     {
       "id": "nl.easeo.lijstje", "name": "Lijstje", "version": "0.1.0",

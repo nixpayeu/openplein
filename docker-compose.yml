@@ -2,12 +2,18 @@ services:
   openplein:
     build: .
     restart: unless-stopped
+    # Het image is tenant-neutraal: de tenantconfiguratie van déze installatie
+    # wordt hier gemount, niet in het image gebakken. Zie deploy.md.
+    volumes:
+      - ./deploy/tenant.saig.json:/app/tenant.json:ro
     environment:
       AUTH_SECRET: ${AUTH_SECRET}
       MOLLIE_API_KEY: ${MOLLIE_API_KEY}
       PUBLIC_URL: https://plein.sovereignaigrid.nl
       SERVE_STATIC: "1"
       DEMO_SHOW_CODE: ${DEMO_SHOW_CODE:-0}
+      TENANT_CONFIG: /app/tenant.json
+      TENANT_HOSTNAME: plein.sovereignaigrid.nl
     ports:
       - "127.0.0.1:5175:5175"
     networks: [proxy]

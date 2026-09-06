@@ -7,12 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      manifest: {
-        name: "Plein", short_name: "Plein",
-        description: "Jouw diensten, één Plein",
-        theme_color: "#070F1C", background_color: "#070F1C", display: "standalone",
-        icons: [{ src: "icon-512.png", sizes: "512x512", type: "image/png" }],
-      },
+      manifest: false,
     }),
   ],
   server: { proxy: { "/api": "http://localhost:5175" } },

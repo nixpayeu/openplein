@@ -148,3 +148,5 @@ button:focus-visible, a.primary:focus-visible { outline: 2px solid var(--mint); 
 @media (prefers-reduced-motion: reduce) {
   .tile, button.primary, a.primary { transition: none; }
 }
+
+.tenant-logo { max-height: 64px; max-width: 60%; display: block; margin: 0 auto 1rem; }

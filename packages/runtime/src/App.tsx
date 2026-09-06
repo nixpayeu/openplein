@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import type { PleinManifest, Permission } from "@openplein/sdk";
+import type { TenantConfig } from "@openplein/tenant";
 import { loadTenant, applyTenantBranding } from "./catalog";
 import { PermissionStore } from "./permissions";
 import { HomeScreen } from "./components/HomeScreen";
@@ -18,6 +19,7 @@ interface PermissionRequest {
 export function App() {
   const [catalog, setCatalog] = useState<PleinManifest[]>([]);
   const [tenantName, setTenantName] = useState("");
+  const [tenant, setTenant] = useState<TenantConfig | null>(null);
   const [tenantError, setTenantError] = useState(false);
   const [session, setSession] = useState<Session | null>(() => {
     const raw = localStorage.getItem("plein.session");
@@ -40,6 +42,7 @@ export function App() {
       .then(({ tenant, catalog }) => {
         applyTenantBranding(tenant);
         setTenantName(tenant.name);
+        setTenant(tenant);
         setCatalog(catalog);
       })
       .catch((e) => {
@@ -86,7 +89,7 @@ export function App() {
     setActive(null);
   };
 
-  if (!session) return <WelcomeView onLogin={login} />;
+  if (!session) return <WelcomeView onLogin={login} tenant={tenant} loadError={tenantError} />;
   return (
     <>
       {active ? (

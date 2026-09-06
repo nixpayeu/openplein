@@ -30,6 +30,21 @@ type App = Hono & { debugLastCode?: string };
 
 const DEFAULT_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 
+const MIME_BY_EXT: Record<string, string> = { svg: "image/svg+xml", png: "image/png" };
+
+/**
+ * Zonder tenant-logo blijft het standaardicoon staan. Mét logo is het formaat
+ * onbekend (kan een SVG-woordmerk of een PNG zijn) — vandaar `sizes: "any"`
+ * en een `type` afgeleid uit de bestandsextensie, weggelaten bij een
+ * onbekende extensie in plaats van een gok als "image/png" op te dringen.
+ */
+function iconFor(logoUrl: string | undefined): { src: string; sizes: string; type?: string } {
+  if (!logoUrl) return { src: "/icon-512.png", sizes: "512x512", type: "image/png" };
+  const ext = logoUrl.split(".").pop()?.toLowerCase();
+  const type = ext ? MIME_BY_EXT[ext] : undefined;
+  return type ? { src: logoUrl, sizes: "any", type } : { src: logoUrl, sizes: "any" };
+}
+
 export function createApp(opts: Options): App {
   const app = new Hono() as App;
   const tokenTtlMs = opts.tokenTtlMs ?? DEFAULT_TOKEN_TTL_MS;
@@ -40,6 +55,20 @@ export function createApp(opts: Options): App {
 
   // Publiek: de shell heeft naam, kleuren en catalogus nodig vóór de inlog.
   app.get("/api/tenant", (c) => c.json(opts.tenantConfig));
+
+  // Het webmanifest hoort bij de tenant, niet bij de build: het image is
+  // tenant-neutraal (zie Dockerfile/docker-compose.yml), de tenantconfiguratie
+  // wordt bij het opstarten gemount, dus de naam op het beginscherm komt
+  // hiervandaan.
+  app.get("/api/manifest.webmanifest", (c) => {
+    const kleur = opts.tenantConfig.colors?.["navy-1"] ?? "#070F1C";
+    return c.json({
+      name: opts.tenantConfig.name, short_name: opts.tenantConfig.name,
+      start_url: "/", display: "standalone",
+      theme_color: kleur, background_color: kleur,
+      icons: [iconFor(opts.tenantConfig.logoUrl)],
+    }, 200, { "Content-Type": "application/manifest+json" });
+  });
 
   const sign = (email: string, ts: number) => {
     const payload = Buffer.from(`${email}|${ts}`).toString("base64url");

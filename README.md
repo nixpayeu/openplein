@@ -69,7 +69,7 @@ strikte origin-checks aan beide kanten. Zie
 
 ## Quickstart
 
-Vereist: Node ≥22.13 (zie `.nvmrc`), pnpm 11.
+Vereist: Node ≥24 (zie `.nvmrc`), pnpm 11.
 
 ```bash
 pnpm install
@@ -124,6 +124,12 @@ dependency heeft — zoals `packages/runtime` — kan wél
 pnpm test                                  # unit-tests (vitest, alle packages)
 pnpm --filter @openplein/e2e test          # end-to-end (Playwright): login → mini-app → permissies → betaling + sandbox-escape-checks
 ```
+
+CI (GitHub Actions, [`.github/workflows/ci.yml`](.github/workflows/ci.yml)) draait
+bij elke push en elke pull request de typecheck, de unit-tests en de
+e2e-suite op Node 24. De e2e-suite start zijn eigen servers (demo-server,
+de twee mini-app-servers en de runtime) via de `webServer`-instelling in
+`e2e/playwright.config.ts`; er is geen aparte CI-stap voor nodig.
 
 ## Licenties
 

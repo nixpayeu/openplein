@@ -24,4 +24,7 @@ export function applyTenantBranding(tenant: TenantConfig): void {
   for (const [naam, waarde] of Object.entries(tenant.colors ?? {})) {
     document.documentElement.style.setProperty(`--${naam}`, waarde);
   }
+  const kleur = tenant.colors?.["navy-1"];
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (kleur && meta) meta.setAttribute("content", kleur);
 }
