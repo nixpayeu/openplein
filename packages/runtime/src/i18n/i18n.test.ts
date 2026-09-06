@@ -7,9 +7,14 @@ import en from "./en.json" with { type: "json" };
 
 describe("i18n", () => {
   it("vertaalt in beide talen en valt terug op de key", () => {
-    setLocale("nl"); expect(t("home.title")).toBe("Plein");
+    setLocale("nl"); expect(t("home.discover")).toBe("Ontdekken");
     setLocale("en"); expect(t("home.discover")).toBe("Discover");
     expect(t("bestaat.niet")).toBe("bestaat.niet");
+  });
+
+  it("vult variabelen in een vertaling in", () => {
+    setLocale("nl");
+    expect(t("welcome.title", { name: "Testvereniging" })).toBe("Welkom bij Testvereniging");
   });
 });
 

@@ -1,8 +1,26 @@
 import { describe, it, expect } from "vitest";
 import { writeFileSync, mkdtempSync } from "node:fs";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import { loadTenantConfig } from "./tenant";
+
+const hier = dirname(fileURLToPath(import.meta.url));
+
+// Deze twee bestanden zijn de échte productieconfiguraties: het lokale-dev-
+// bestand (draait mee bij `pnpm dev`) en de SAIG-configuratie die
+// docker-compose.yml op de VPS mount. Een handmatige fout in een van beide
+// hoort een rode testrun te zijn, niet pas een crashende container.
+describe("echte tenantconfiguraties", () => {
+  it("laadt apps/demo/server/tenant.json (lokale dev)", () => {
+    expect(loadTenantConfig(join(hier, "../tenant.json"), "localhost").name).toBe("Plein");
+  });
+
+  it("laadt deploy/tenant.saig.json (productie)", () => {
+    const pad = join(hier, "../../../../deploy/tenant.saig.json");
+    expect(loadTenantConfig(pad, "plein.sovereignaigrid.nl").name).toBe("Plein");
+  });
+});
 
 const dir = mkdtempSync(join(tmpdir(), "plein-tenant-"));
 

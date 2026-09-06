@@ -1,5 +1,5 @@
 {
-  "home.title": "Plein", "home.discover": "Discover", "home.installed": "Your mini-apps",
+  "home.discover": "Discover", "home.installed": "Your mini-apps",
   "login.title": "Sign in to {name}", "login.titleAnon": "Sign in",
   "login.email": "Email address", "login.code": "Code from your email",
   "login.codeDemo": "Sign-in code", "login.busy": "Working…",
@@ -14,5 +14,5 @@
   "perm.email": "your email address",
   "miniapp.close": "Close", "miniapp.by": "by {provider}",
   "checkout.title": "Payment waiting", "checkout.open": "Open the payment page",
-  "tenant.loadError": "The plein could not be loaded. Please try again later."
+  "tenant.loadError": "The configuration could not be loaded. Please try again later."
 }

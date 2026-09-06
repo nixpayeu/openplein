@@ -1,5 +1,5 @@
 {
-  "home.title": "Plein", "home.discover": "Ontdekken", "home.installed": "Jouw mini-apps",
+  "home.discover": "Ontdekken", "home.installed": "Jouw mini-apps",
   "login.title": "Inloggen bij {name}", "login.titleAnon": "Inloggen",
   "login.email": "E-mailadres", "login.code": "Code uit je mail",
   "login.codeDemo": "Inlogcode", "login.busy": "Bezig…",
@@ -14,5 +14,5 @@
   "perm.email": "je e-mailadres",
   "miniapp.close": "Sluiten", "miniapp.by": "door {provider}",
   "checkout.title": "Betaling wacht", "checkout.open": "Open de betaalpagina",
-  "tenant.loadError": "Het plein kon niet geladen worden. Probeer het later opnieuw."
+  "tenant.loadError": "De configuratie kon niet geladen worden. Probeer het later opnieuw."
 }

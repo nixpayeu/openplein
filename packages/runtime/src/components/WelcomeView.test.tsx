@@ -53,9 +53,11 @@ describe("WelcomeView", () => {
     expect(tekst).not.toContain("demo");
   });
 
-  it("meldt het als de tenant niet geladen kon worden", () => {
+  it("meldt het als de tenant niet geladen kon worden, zonder het merk te noemen", () => {
     const tekst = render(<WelcomeView onLogin={() => {}} tenant={null} loadError={true} />);
     expect(tekst).toContain("kon niet geladen worden");
+    // Hoofdletterongevoelig: "plein" mag hier ook niet als "Plein" terugkomen.
+    expect(tekst.toLowerCase()).not.toContain("plein");
   });
 
   it("toont geen halve zinnen zolang de tenant nog laadt", () => {

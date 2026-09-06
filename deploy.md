@@ -75,10 +75,75 @@ starten (`process.exit(1)`) in plaats van door te draaien met een lege
 HMAC-sleutel — check `docker compose logs openplein` als de container direct
 stopt na `up`.
 
-Overige omgevingsvariabelen:
+## 2b. Tenantconfiguratie: verplicht, per installatie
 
-- `TENANT_CONFIG` (standaard `./tenant.json`): pad naar de tenantconfiguratie.
-- `TENANT_HOSTNAME` (standaard `localhost`): de hostnaam waarop deze installatie draait. Komt hij niet overeen met de `hostname` in de configuratie, dan start de server niet.
+**Het Docker-image is tenant-neutraal**: er zit géén tenantconfiguratie in
+gebakken (zie `Dockerfile`). Elke installatie mount zijn eigen configuratie
+en geeft twee omgevingsvariabelen mee. Zonder die twee dingen, of met een
+`hostname` in het bestand die niet overeenkomt, **weigert de container
+bewust te starten** (`loadTenantConfig` in `apps/demo/server/src/tenant.ts`
+gooit een fout, het proces stopt) — dat voorkomt dat een installatie half
+geconfigureerd, of met de configuratie van een andere klant, live komt.
+
+Voor déze installatie (`plein.sovereignaigrid.nl`) staat dat al klaar in
+`docker-compose.yml`:
+
+- **Mount:** `deploy/tenant.saig.json` → `/app/tenant.json` (read-only).
+- **`TENANT_CONFIG=/app/tenant.json`** — pad naar het gemounte bestand.
+- **`TENANT_HOSTNAME=plein.sovereignaigrid.nl`** — moet gelijk zijn aan het
+  `hostname`-veld in dat bestand.
+
+Bij de eerstvolgende deploy van déze installatie hoef je hier dus niets
+extra voor te doen — het staat al in `docker-compose.yml`. Richt je een
+**tweede klant** in (nieuwe installatie, ander image-run of andere
+`docker-compose.yml`), pas dan die drie dingen aan: mount het
+configuratiebestand van die klant op hetzelfde pad, en zet
+`TENANT_HOSTNAME` op diens hostnaam. Zie het schema in
+`packages/tenant/src/schema.json` en de sectie hieronder voor welke velden
+daarin mogen staan.
+
+Zonder `TENANT_CONFIG`/`TENANT_HOSTNAME` (bijv. `docker run` zonder deze
+twee env-vars en zonder mount) start de container niet — dat is bewust
+gedrag, geen bug.
+
+## 2c. Velden in de tenantconfiguratie
+
+Volledig schema: `packages/tenant/src/schema.json`. Hieronder de praktische
+samenvatting voor wie een nieuwe tenant inricht:
+
+- **`hostname`** (verplicht): moet gelijk zijn aan `TENANT_HOSTNAME`, zie 2b.
+- **`name`** (verplicht): tenant-naam, komt terug als woordmerk, paginatitel
+  en in het webmanifest (`name`/`short_name`).
+- **`logoUrl`** (optioneel): URL van het logo op het uitgelogde scherm.
+  Zonder `logoUrl` toont dat scherm de naam als tekstmerk. Een `.svg`- of
+  `.png`-extensie bepaalt het `type` in het webmanifest-icoon; een andere
+  extensie laat `type` weg. Zonder `logoUrl` blijft het ingebouwde
+  standaardicoon (`/icon-512.png`) staan.
+- **`colors`** (optioneel): huisstijlkleuren, o.a. `navy-1` (thema-/
+  achtergrondkleur van het webmanifest). Ontbreekt die, dan valt hij terug
+  op de standaardkleur.
+- **`catalog`** (verplicht, mag leeg): de mini-apps van deze installatie,
+  elk een manifest zoals `docs/miniapp-spec.md` beschrijft.
+- **`welcome`** (optioneel): de inhoud van het uitgelogde scherm, per taal.
+
+### Het `welcome`-blok
+
+```json
+"welcome": {
+  "nl": { "intro": "...", "sections": [{ "title": "...", "items": ["...", "..."] }] },
+  "en": { "intro": "...", "sections": [ ... ] }
+}
+```
+
+- `nl` en `en` zijn beide optioneel, maar minstens één moet er zijn wil
+  `welcome` iets toevoegen. Ontbreekt een taal, dan valt de shell terug op
+  de andere taal (`welcomeFor` in `@openplein/tenant`) — er hoeft dus geen
+  dubbele vertaling te zijn.
+- `intro` is verplicht per taal; `sections` is optioneel en herhaalbaar,
+  elke sectie heeft een `title` en een lijst `items`.
+- **Zonder `welcome`-blok helemaal** krijgt de tenant gewoon een werkend
+  uitgelogde scherm: naam/logo en het inlogformulier, zonder introtekst of
+  secties. `welcome` is dus puur een uitbreiding, geen vereiste.
 
 ## 3. Build + start
 

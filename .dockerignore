@@ -6,3 +6,8 @@
 .env
 *.local
 e2e/playwright-report
+# Lokale dev-tenant (hostname "localhost"): mag niet in het tenant-neutrale
+# image zitten, anders start de container "toevallig" zonder gemounte
+# configuratie. Elke installatie mount zijn eigen tenantconfiguratie, zie
+# deploy.md.
+apps/demo/server/tenant.json
