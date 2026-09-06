@@ -44,7 +44,7 @@ Vanaf een lokale checkout van de `fase0-mvp`-branch (of `main` na merge):
 
 ```bash
 rsync -az --delete \
-  --exclude node_modules --exclude dist --exclude .git \
+  --exclude .env --exclude node_modules --exclude dist --exclude .git \
   ./ nextcloud-vps:/opt/docker/openplein/
 ```
 
@@ -78,7 +78,7 @@ stopt na `up`.
 ## 2b. Tenantconfiguratie: verplicht, per installatie
 
 **Het Docker-image is tenant-neutraal**: er zit géén tenantconfiguratie in
-gebakken (zie `Dockerfile`). Elke installatie mount zijn eigen configuratie
+gebakken (zie `Dockerfile` en `.dockerignore`). Elke installatie mount zijn eigen configuratie
 en geeft twee omgevingsvariabelen mee. Zonder die twee dingen, of met een
 `hostname` in het bestand die niet overeenkomt, **weigert de container
 bewust te starten** (`loadTenantConfig` in `apps/demo/server/src/tenant.ts`

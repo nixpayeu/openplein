@@ -11,3 +11,8 @@ e2e/playwright-report
 # configuratie. Elke installatie mount zijn eigen tenantconfiguratie, zie
 # deploy.md.
 apps/demo/server/tenant.json
+
+# Tenantconfiguraties van installaties horen niet in het image: elke
+# installatie mount de zijne. Zonder deze regel zou deploy/tenant.saig.json
+# meeliften in het image van elke andere klant.
+deploy/

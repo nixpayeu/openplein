@@ -65,5 +65,6 @@ describe("WelcomeView", () => {
     expect(tekst).not.toContain("Welkom bij");
     expect(tekst).not.toContain("Inloggen bij");
     expect(tekst).toContain("Inloggen");
+    expect(tekst.toLowerCase()).not.toContain("plein");
   });
 });

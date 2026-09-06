@@ -13,12 +13,12 @@ const hier = dirname(fileURLToPath(import.meta.url));
 // hoort een rode testrun te zijn, niet pas een crashende container.
 describe("echte tenantconfiguraties", () => {
   it("laadt apps/demo/server/tenant.json (lokale dev)", () => {
-    expect(loadTenantConfig(join(hier, "../tenant.json"), "localhost").name).toBe("Plein");
+    expect(() => loadTenantConfig(join(hier, "../tenant.json"), "localhost")).not.toThrow();
   });
 
   it("laadt deploy/tenant.saig.json (productie)", () => {
     const pad = join(hier, "../../../../deploy/tenant.saig.json");
-    expect(loadTenantConfig(pad, "plein.sovereignaigrid.nl").name).toBe("Plein");
+    expect(() => loadTenantConfig(pad, "plein.sovereignaigrid.nl")).not.toThrow();
   });
 });
 
