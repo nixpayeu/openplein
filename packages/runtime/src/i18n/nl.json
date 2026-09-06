@@ -1,6 +1,7 @@
 {
   "home.title": "Plein", "home.discover": "Ontdekken", "home.installed": "Jouw mini-apps",
-  "login.title": "Inloggen bij {name}", "login.email": "E-mailadres", "login.code": "Code uit je mail",
+  "login.title": "Inloggen bij {name}", "login.titleAnon": "Inloggen",
+  "login.email": "E-mailadres", "login.code": "Code uit je mail",
   "login.codeDemo": "Inlogcode", "login.busy": "Bezig…",
   "login.sendCode": "Stuur code", "login.verify": "Inloggen", "login.error": "Inloggen mislukt",
   "login.demoCode": "Demo-modus — jouw inlogcode:",

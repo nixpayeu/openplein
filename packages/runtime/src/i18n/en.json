@@ -1,6 +1,7 @@
 {
   "home.title": "Plein", "home.discover": "Discover", "home.installed": "Your mini-apps",
-  "login.title": "Sign in to {name}", "login.email": "Email address", "login.code": "Code from your email",
+  "login.title": "Sign in to {name}", "login.titleAnon": "Sign in",
+  "login.email": "Email address", "login.code": "Code from your email",
   "login.codeDemo": "Sign-in code", "login.busy": "Working…",
   "login.sendCode": "Send code", "login.verify": "Sign in", "login.error": "Sign-in failed",
   "login.demoCode": "Demo mode — your sign-in code:",

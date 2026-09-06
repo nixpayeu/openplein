@@ -45,7 +45,7 @@ export function LoginView(props: { onLogin: (s: Session) => void; name: string }
 
   return (
     <div className="login" id="start">
-      <h1>{t("login.title", { name: props.name })}</h1>
+      <h1>{props.name ? t("login.title", { name: props.name }) : t("login.titleAnon")}</h1>
       <form onSubmit={(e) => { e.preventDefault(); void submit(); }}>
         {stage === "email" ? (
           <>

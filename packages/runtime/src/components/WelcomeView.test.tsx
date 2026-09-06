@@ -6,6 +6,11 @@ import { WelcomeView } from "./WelcomeView";
 import { setLocale } from "../i18n";
 import type { TenantConfig } from "@openplein/tenant";
 
+// Zonder deze vlag klaagt React dat renders buiten act() gebeuren, ook al
+// gebruiken we act() hieronder wél; React ziet de jsdom-omgeving anders niet
+// als een test-omgeving.
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+
 // jsdom's navigator.language is "en-US"; deze tests verwachten Nederlandse
 // tekst, dus zetten we de taal expliciet (zoals i18n.test.ts ook doet).
 setLocale("nl");
@@ -51,5 +56,12 @@ describe("WelcomeView", () => {
   it("meldt het als de tenant niet geladen kon worden", () => {
     const tekst = render(<WelcomeView onLogin={() => {}} tenant={null} loadError={true} />);
     expect(tekst).toContain("kon niet geladen worden");
+  });
+
+  it("toont geen halve zinnen zolang de tenant nog laadt", () => {
+    const tekst = render(<WelcomeView onLogin={() => {}} tenant={null} loadError={false} />);
+    expect(tekst).not.toContain("Welkom bij");
+    expect(tekst).not.toContain("Inloggen bij");
+    expect(tekst).toContain("Inloggen");
   });
 });

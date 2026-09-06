@@ -13,11 +13,11 @@ export function WelcomeView(props: {
   const welkom = props.tenant ? welcomeFor(props.tenant, getLocale()) : null;
   return (
     <main className="welcome">
-      {props.tenant?.logoUrl
+      {naam && (props.tenant?.logoUrl
         ? <img className="tenant-logo" src={props.tenant.logoUrl} alt={naam} />
-        : <div className="bord-mini" role="img" aria-label={naam}>{naam}</div>}
+        : <div className="bord-mini" role="img" aria-label={naam}>{naam}</div>)}
       {props.loadError && <p className="error">{t("tenant.loadError")}</p>}
-      <h1>{t("welcome.title", { name: naam })}</h1>
+      {naam && <h1>{t("welcome.title", { name: naam })}</h1>}
       {welkom && <p className="intro">{welkom.intro}</p>}
       {welkom?.sections?.map((s) => (
         <section key={s.title}>
