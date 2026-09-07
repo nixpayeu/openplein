@@ -176,6 +176,14 @@ describe("brute-force-guard", () => {
     expect((await verifieer(app, adres, code)).status).toBe(200);
   });
 
+  it("geeft 400 en geen 500 als het adres geen tekst is", async () => {
+    const res = await guardApp().request("/api/auth/verify", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: null, code: "1" }),
+    });
+    expect(res.status).toBe(400);
+  });
+
   it("een nieuwe code aanvragen zet de pogingenteller niet terug", async () => {
     const app = guardApp();
     const email = "opnieuw@example.nl";

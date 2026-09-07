@@ -208,7 +208,10 @@ export function createApp(opts: Options): App {
   }
 
   app.post("/api/auth/verify", async (c) => {
-    const { email, code } = await c.req.json<{ email: string; code: string }>();
+    const { email, code } = await c.req.json<{ email: unknown; code: unknown }>();
+    // Zelfde typecontrole als request-code: zonder deze regel gooit
+    // normaliseer() op een niet-tekstuele waarde en wordt het een 500.
+    if (typeof email !== "string" || typeof code !== "string") return c.body(null, 400);
     const key = normaliseer(email);
     // Vóór de codecontrole: een nieuwe code aanvragen mag een blokkade niet
     // omzeilen. Zonder deze regel kost brute-force op de negencijferige code
