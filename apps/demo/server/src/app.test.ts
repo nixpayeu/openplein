@@ -48,7 +48,7 @@ describe("demo-modus (demoShowCode)", () => {
     });
     expect(res.status).toBe(200);
     const { demoCode } = (await res.json()) as { demoCode: string };
-    expect(demoCode).toMatch(/^\d{6}$/);
+    expect(demoCode).toMatch(/^\d{9}$/);
     const verify = await demoApp.request("/api/auth/verify", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: "demo@example.nl", code: demoCode }),
@@ -119,9 +119,31 @@ describe("brute-force-guard", () => {
     for (let i = 0; i < 5; i++) {
       expect((await verifieer(app, "brute@example.nl", "000000")).status).toBe(401);
     }
-    // "000000" kan nooit de echte code zijn (randInt start bij 100000), dus
+    // "000000" kan nooit de echte code zijn (die is negen cijfers lang), dus
     // dit bewijst dat de blokkade actief is, niet dat de code toevallig fout is.
     expect((await verifieer(app, "brute@example.nl", correctCode)).status).toBe(401);
+  });
+
+  it("blokkeert ook een andere spelling van hetzelfde adres (hoofdletters, spaties)", async () => {
+    const app = guardApp();
+    // Pogingenteller opbranden met één spelling van een beheerdersadres.
+    for (let i = 0; i < 5; i++) {
+      await vraagCode(app, "bestuur@example.org");
+      expect((await verifieer(app, "bestuur@example.org", "000000")).status).toBe(401);
+    }
+    // Zelfde spelling, juiste code: de blokkade werkt.
+    await vraagCode(app, "bestuur@example.org");
+    expect((await verifieer(app, "bestuur@example.org", app.debugLastCode!)).status).toBe(401);
+    // Andere hoofdletters, juiste code voor díe aanvraag: zonder normalisatie
+    // is dit voor de teller een vers adres en zou dit inloggen (200) — dat
+    // was het lek.
+    await vraagCode(app, "BeStUuR@Example.ORG");
+    expect((await verifieer(app, "BeStUuR@Example.ORG", app.debugLastCode!)).status).toBe(401);
+    // Spaties eromheen, juiste code voor díe aanvraag: zelfde adres, dus ook
+    // geblokkeerd.
+    await vraagCode(app, "   bestuur@example.org  ");
+    const res = await verifieer(app, "   bestuur@example.org  ", app.debugLastCode!);
+    expect(res.status).toBe(401);
   });
 
   it("een nieuwe code aanvragen zet de pogingenteller niet terug", async () => {

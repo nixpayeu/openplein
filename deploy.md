@@ -173,7 +173,12 @@ samenvatting voor wie een nieuwe tenant inricht:
   `false`, dan geeft de server op elke `/api/leden`-route een 403, ook met
   een geldig token en ook voor een beheerder). Zet dit pas op `true` als er
   ook `admins` ingevuld zijn — een register zonder iemand die het kan
-  inzien of opschonen is precies de situatie die dit veld voorkomt.
+  inzien of opschonen is precies de situatie die dit veld voorkomt. **Loop
+  bij het aanzetten ook de `welcome`-tekst van deze tenant na**: de
+  meegeleverde SAIG-configuratie (`deploy/tenant.saig.json`) zegt op het
+  inlogscherm dat gegevens niet in een database worden bewaard. Zet je
+  `ledenregister: true` zonder die zin aan te passen, dan staat er een
+  onwaarheid op het scherm.
 
 ### Het `welcome`-blok
 

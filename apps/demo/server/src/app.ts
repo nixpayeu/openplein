@@ -81,15 +81,26 @@ export function createApp(opts: Options): App {
   const tokenTtlMs = opts.tokenTtlMs ?? DEFAULT_TOKEN_TTL_MS;
   const codes = new Map<string, { code: string; expires: number }>();
   const mockPayments = new Map<string, { polls: number }>();
-  // Foute pogingen tellen per e-mailadres, over aanvragen heen: een nieuwe
-  // code aanvragen zet deze teller niet terug (dat was het lek — zie
-  // verify hieronder). Bij te veel pogingen wordt het adres tijdelijk
-  // geblokkeerd in plaats van dat de teller weer op nul begint, zodat een
-  // gebruiker die zich verschrijft niet voorgoed vastloopt.
+  // Foute pogingen tellen per genormaliseerd e-mailadres (trim + lowercase,
+  // zie normaliseer hieronder), over aanvragen heen: een nieuwe code
+  // aanvragen zet deze teller niet terug, en ook een andere spelling van
+  // hetzelfde adres deelt dezelfde teller — anders geeft elke schrijfwijze
+  // een verse reeks gokpogingen (dat was het lek). Bij te veel pogingen
+  // wordt het adres tijdelijk geblokkeerd in plaats van dat de teller weer
+  // op nul begint, zodat een gebruiker die zich verschrijft niet voorgoed
+  // vastloopt.
   const verifyFailures = new Map<string, { attempts: number; blockedUntil: number }>();
   const MAX_VERIFY_ATTEMPTS = opts.maxVerifyAttempts ?? 20;
   const VERIFY_BLOCK_DURATION_MS = opts.verifyBlockDurationMs ?? 15 * 60_000;
   const MAX_MOCK_PAYMENTS = 1000;
+
+  // Eén normalisatie voor alle sleutels rond inloggen: `codes`,
+  // `verifyFailures` én de tokeninhoud gebruiken dezelfde vorm als
+  // `isAdmin` (packages/tenant/src/tenant.ts). Zonder dit gebruikt de teller
+  // het ruwe adres terwijl de beheerderscontrole normaliseert, waardoor
+  // "BeStUuR@Example.ORG" een andere sleutel is dan "bestuur@example.org"
+  // maar wél hetzelfde token oplevert — dat was het lek.
+  const normaliseer = (email: string): string => email.trim().toLowerCase();
 
   const isGeblokkeerd = (email: string): boolean => {
     const s = verifyFailures.get(email);
@@ -164,17 +175,22 @@ export function createApp(opts: Options): App {
   app.post("/api/auth/request-code", async (c) => {
     const { email } = await c.req.json<{ email: string }>();
     if (!email?.includes("@")) return c.body(null, 400);
+    const key = normaliseer(email);
     const now = Date.now();
-    // Ruim vervallen codes op vóór het zetten van een nieuwe (goedkope,
-    // opportunistische opschoning i.p.v. een aparte cron/timer).
-    for (const [key, entry] of codes) if (entry.expires < now) codes.delete(key);
-    const code = String(randomInt(100000, 1000000));
+    // Ruim vervallen codes en vervallen blokkades/tellers op vóór het zetten
+    // van een nieuwe code (goedkope, opportunistische opschoning i.p.v. een
+    // aparte cron/timer).
+    for (const [k, entry] of codes) if (entry.expires < now) codes.delete(k);
+    for (const [k, s] of verifyFailures) {
+      if (s.blockedUntil !== 0 && s.blockedUntil < now) verifyFailures.delete(k);
+    }
+    const code = String(randomInt(100000000, 1000000000));
     // Bewust geen `attempts` hier: de pogingenteller leeft in verifyFailures
     // en blijft bestaan zolang het adres niet geblokkeerd raakt of inlogt,
     // juist zodat een nieuwe aanvraag geen frisse reeks gokpogingen geeft.
-    codes.set(email, { code, expires: now + 10 * 60_000 });
+    codes.set(key, { code, expires: now + 10 * 60_000 });
     app.debugLastCode = code;
-    console.log(`[plein-auth] code voor ${email}: ${code}`);
+    console.log(`[plein-auth] code voor ${key}: ${code}`);
     // optioneel: SMTP_URL → nodemailer.sendMail; stdout blijft de primaire MVP-flow
     if (opts.demoShowCode) return c.json({ demoCode: code });
     return c.body(null, 204);
@@ -186,21 +202,26 @@ export function createApp(opts: Options): App {
 
   app.post("/api/auth/verify", async (c) => {
     const { email, code } = await c.req.json<{ email: string; code: string }>();
+    const key = normaliseer(email);
     // Vóór de codecontrole: een nieuwe code aanvragen mag een blokkade niet
-    // omzeilen. Zonder deze regel kost brute-force op de 6-cijferige code
+    // omzeilen. Zonder deze regel kost brute-force op de negencijferige code
     // hooguit MAX_VERIFY_ATTEMPTS gokken per aanvraag, met onbeperkt veel
-    // aanvragen — dat was het lek. De teller in verifyFailures loopt nu over
-    // aanvragen heen door.
-    if (isGeblokkeerd(email)) return c.body(null, 401);
-    const entry = codes.get(email);
+    // aanvragen. De teller in verifyFailures loopt over aanvragen heen door
+    // én gebruikt hetzelfde genormaliseerde adres (`key`) als het token
+    // hieronder: zonder die normalisatie kreeg elke andere spelling van
+    // hetzelfde adres (hoofdletters, spaties) zijn eigen verse pogingen,
+    // terwijl `isAdmin` alle spellingen als hetzelfde adres herkende. Dát was
+    // het lek.
+    if (isGeblokkeerd(key)) return c.body(null, 401);
+    const entry = codes.get(key);
     if (!entry || entry.expires < Date.now()) return c.body(null, 401);
     if (entry.code !== code) {
-      registreerFouteCode(email);
+      registreerFouteCode(key);
       return c.body(null, 401);
     }
-    codes.delete(email);
-    verifyFailures.delete(email);
-    return c.json({ token: sign(email, Date.now()) });
+    codes.delete(key);
+    verifyFailures.delete(key);
+    return c.json({ token: sign(key, Date.now()) });
   });
 
   app.use("/api/payments/*", async (c, next) => {

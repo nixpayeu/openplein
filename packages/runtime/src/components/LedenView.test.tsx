@@ -113,4 +113,16 @@ describe("LedenView", () => {
     await act(async () => { knop.click(); await wachtOpMicrotaken(); });
     expect(el.textContent).toContain("mislukt");
   });
+
+  it("toont een foutmelding als fetch een netwerkfout gooit, in plaats van een onafgehandelde rejection", async () => {
+    const fetchMock = vi.fn((url: string) =>
+      url === "/api/leden.csv" ? Promise.reject(new Error("netwerk weg")) : Promise.resolve(antwoord(leden)),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const el = render(<LedenView token="tok" onClose={() => {}} />);
+    await act(async () => { await wachtOpMicrotaken(); });
+    const knop = Array.from(el.querySelectorAll("button")).find((b) => b.textContent?.includes("csv"))!;
+    await act(async () => { knop.click(); await wachtOpMicrotaken(); });
+    expect(el.textContent).toContain("mislukt");
+  });
 });

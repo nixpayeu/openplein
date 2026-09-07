@@ -34,20 +34,27 @@ export function LedenView(props: { token: string; onClose: () => void }) {
   // zichtbare melding lijkt de knop dan gewoon niets te doen.
   async function download() {
     setDownloadMislukt(false);
-    const res = await fetch("/api/leden.csv", { headers: { Authorization: `Bearer ${props.token}` } });
-    if (!res.ok) return setDownloadMislukt(true);
-    const url = URL.createObjectURL(await res.blob());
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "leden.csv";
-    // Sommige browsers vereisen dat het anker in het document staat vóór
-    // een geprogrammeerde klik werkt.
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    // revokeObjectURL ná a.click() synchroon aanroepen kan de download nog
-    // afbreken; een macrotaak later is de download al gestart.
-    setTimeout(() => URL.revokeObjectURL(url), 0);
+    // Zowel een netwerkfout (fetch gooit) als een niet-ok antwoord moeten
+    // dezelfde melding geven: zonder try/catch bleef een netwerkfout hier
+    // een onafgehandelde rejection, met een knop die zichtbaar niets deed.
+    try {
+      const res = await fetch("/api/leden.csv", { headers: { Authorization: `Bearer ${props.token}` } });
+      if (!res.ok) return setDownloadMislukt(true);
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "leden.csv";
+      // Sommige browsers vereisen dat het anker in het document staat vóór
+      // een geprogrammeerde klik werkt.
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // revokeObjectURL ná a.click() synchroon aanroepen kan de download nog
+      // afbreken; een macrotaak later is de download al gestart.
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    } catch {
+      setDownloadMislukt(true);
+    }
   }
 
   return (
