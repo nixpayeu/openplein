@@ -97,6 +97,16 @@ function guardApp() {
   });
 }
 
+// Zelfde opzet, maar met een blokkadeduur van enkele milliseconden, zodat de
+// opschoning van oude tellers waarneembaar is zonder de test traag te maken.
+function kortstondigeGuardApp() {
+  return createApp({
+    authSecret: "test-secret", paymentsMock: true, db: openDb(":memory:"),
+    tenantConfig: { hostname: "localhost", name: "Plein", catalog: [] },
+    maxVerifyAttempts: 2, verifyBlockDurationMs: 20,
+  });
+}
+
 async function vraagCode(app: ReturnType<typeof createApp>, email: string): Promise<void> {
   await app.request("/api/auth/request-code", {
     method: "POST", headers: { "Content-Type": "application/json" },
@@ -144,6 +154,26 @@ describe("brute-force-guard", () => {
     await vraagCode(app, "   bestuur@example.org  ");
     const res = await verifieer(app, "   bestuur@example.org  ", app.debugLastCode!);
     expect(res.status).toBe(401);
+  });
+
+  it("ruimt een teller op die langer dan de blokkadeduur onaangeroerd is", async () => {
+    const app = kortstondigeGuardApp();
+    const adres = "vergeetachtig@example.org";
+    await vraagCode(app, adres);
+    // Eén misser: de teller staat nu op 1 van de 2, dus nog niet geblokkeerd.
+    expect((await verifieer(app, adres, "000000000")).status).toBe(401);
+
+    // Wachten tot de teller verlopen is, daarna een nieuwe aanvraag die de
+    // opschoning uitvoert. De volgende misser hoort weer bij 1 te beginnen en
+    // dus niet meteen te blokkeren.
+    await new Promise((r) => setTimeout(r, 40));
+    await vraagCode(app, adres);
+    expect((await verifieer(app, adres, "000000000")).status).toBe(401);
+
+    // Als de teller níét was opgeruimd, stond hij nu op 2 en was het adres
+    // geblokkeerd; de juiste code zou dan ook falen.
+    const code = app.debugLastCode!;
+    expect((await verifieer(app, adres, code)).status).toBe(200);
   });
 
   it("een nieuwe code aanvragen zet de pogingenteller niet terug", async () => {

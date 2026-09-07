@@ -89,7 +89,7 @@ export function createApp(opts: Options): App {
   // wordt het adres tijdelijk geblokkeerd in plaats van dat de teller weer
   // op nul begint, zodat een gebruiker die zich verschrijft niet voorgoed
   // vastloopt.
-  const verifyFailures = new Map<string, { attempts: number; blockedUntil: number }>();
+  const verifyFailures = new Map<string, { attempts: number; blockedUntil: number; laatstOp: number }>();
   const MAX_VERIFY_ATTEMPTS = opts.maxVerifyAttempts ?? 20;
   const VERIFY_BLOCK_DURATION_MS = opts.verifyBlockDurationMs ?? 15 * 60_000;
   const MAX_MOCK_PAYMENTS = 1000;
@@ -111,8 +111,9 @@ export function createApp(opts: Options): App {
   };
 
   const registreerFouteCode = (email: string): void => {
-    const s = verifyFailures.get(email) ?? { attempts: 0, blockedUntil: 0 };
+    const s = verifyFailures.get(email) ?? { attempts: 0, blockedUntil: 0, laatstOp: 0 };
     s.attempts++;
+    s.laatstOp = Date.now();
     if (s.attempts >= MAX_VERIFY_ATTEMPTS) {
       s.blockedUntil = Date.now() + VERIFY_BLOCK_DURATION_MS;
       s.attempts = 0;
@@ -181,8 +182,14 @@ export function createApp(opts: Options): App {
     // van een nieuwe code (goedkope, opportunistische opschoning i.p.v. een
     // aparte cron/timer).
     for (const [k, entry] of codes) if (entry.expires < now) codes.delete(k);
+    // Ook tellers die de drempel nooit haalden moeten weg, anders groeit deze
+    // map onbeperkt: één foute poging op willekeurig veel adressen zou anders
+    // evenveel permanente records opleveren. Een teller die langer dan de
+    // blokkadeduur onaangeroerd is, weggooien kost geen bescherming: de
+    // blokkade zou na diezelfde tijd tóch vervallen zijn.
     for (const [k, s] of verifyFailures) {
-      if (s.blockedUntil !== 0 && s.blockedUntil < now) verifyFailures.delete(k);
+      const vervalt = Math.max(s.blockedUntil, s.laatstOp + VERIFY_BLOCK_DURATION_MS);
+      if (vervalt < now) verifyFailures.delete(k);
     }
     const code = String(randomInt(100000000, 1000000000));
     // Bewust geen `attempts` hier: de pogingenteller leeft in verifyFailures
