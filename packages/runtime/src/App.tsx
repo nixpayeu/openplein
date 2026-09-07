@@ -7,6 +7,8 @@ import { HomeScreen } from "./components/HomeScreen";
 import { MiniAppView } from "./components/MiniAppView";
 import { PermissionDialog } from "./components/PermissionDialog";
 import { WelcomeView } from "./components/WelcomeView";
+import { LidWordenView } from "./components/LidWordenView";
+import { LedenView } from "./components/LedenView";
 import { t } from "./i18n";
 
 export interface Session { email: string; token: string }
@@ -36,6 +38,36 @@ export function App() {
   const [active, setActive] = useState<PleinManifest | null>(null);
   const [permReq, setPermReq] = useState<PermissionRequest | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  // "onbekend" zolang de statuscheck nog loopt: dat voorkomt dat het
+  // aanmeldformulier even opflitst voor iemand die al lid is.
+  const [lidStatus, setLidStatus] = useState<"onbekend" | "lid" | "geenLid">("onbekend");
+  const [beheerder, setBeheerder] = useState(false);
+  const [toonLeden, setToonLeden] = useState(false);
+
+  useEffect(() => {
+    if (!session) return;
+    fetch("/api/leden/mij", { headers: { Authorization: `Bearer ${session.token}` } })
+      .then((res) => setLidStatus(res.ok ? "lid" : "geenLid"))
+      .catch((e) => {
+        // Een randvoorziening die hapert mag het plein niet blokkeren: een
+        // overbodig aanmeldformulier is minder erg dan een leeg scherm.
+        console.warn("Lidmaatschap ophalen mislukt:", e);
+        setLidStatus("geenLid");
+      });
+  }, [session]);
+
+  useEffect(() => {
+    if (!session) return;
+    fetch("/api/leden/beheerder", { headers: { Authorization: `Bearer ${session.token}` } })
+      .then((res) => (res.ok ? res.json() : { beheerder: false }))
+      .then((data: { beheerder: boolean }) => setBeheerder(data.beheerder))
+      .catch((e) => {
+        // Zelfde redenering als bij lidStatus: geen knop tonen is veiliger
+        // dan gokken dat iemand beheerder is.
+        console.warn("Beheerderstatus ophalen mislukt:", e);
+        setBeheerder(false);
+      });
+  }, [session]);
 
   useEffect(() => {
     void loadTenant()
@@ -97,7 +129,24 @@ export function App() {
       ) : (
         <>
           {tenantError && <p className="error">{t("tenant.loadError")}</p>}
-          <HomeScreen catalog={catalog} onOpen={setActive} title={tenantName} />
+          {toonLeden ? (
+            <LedenView token={session.token} onClose={() => setToonLeden(false)} />
+          ) : (
+            <>
+              {/* Opt-in per tenant: zonder `ledenregister: true` bestaat het
+                  aanmeldformulier voor deze installatie niet, ook niet voor
+                  een bezoeker die nog geen lid is. De server wijst
+                  `/api/leden` sowieso af (zie app.ts), maar het formulier
+                  tonen zou alsnog een valse belofte zijn. */}
+              {tenant?.ledenregister === true && lidStatus === "geenLid" && (
+                <LidWordenView token={session.token} onLid={() => setLidStatus("lid")} />
+              )}
+              <HomeScreen
+                catalog={catalog} onOpen={setActive} title={tenantName}
+                beheerder={beheerder} onOpenLeden={() => setToonLeden(true)}
+              />
+            </>
+          )}
         </>
       )}
       {permReq && (

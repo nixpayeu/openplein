@@ -150,3 +150,14 @@ button:focus-visible, a.primary:focus-visible { outline: 2px solid var(--mint); 
 }
 
 .tenant-logo { max-height: 64px; max-width: 60%; display: block; margin: 0 auto 1rem; }
+
+/* ── Ledenregister ────────────────────────────────────── */
+.leden-link { display: block; margin: .8rem 0 0; }
+.leden { padding: 1rem; max-width: 640px; margin: 0 auto; }
+.leden table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+.leden th, .leden td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--lijn); }
+.leden th {
+  font-family: var(--mono); font-size: .7rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--mint);
+}
+.leden td { color: var(--ijs); }

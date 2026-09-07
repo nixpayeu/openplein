@@ -1,12 +1,20 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
+import type { DatabaseSync } from "node:sqlite";
 import type { TenantConfig } from "@openplein/tenant";
+import { isAdmin } from "@openplein/tenant";
+import { meldAan, vindOpEmail, alleLeden, alsCsv } from "./leden";
 
 interface Options {
   tenantConfig: TenantConfig;
+  db: DatabaseSync;
   authSecret: string; paymentsMock: boolean; mollieApiKey?: string; publicUrl?: string;
   tokenTtlMs?: number;
+  /** Testhaak, zoals tokenTtlMs: standaard 20, over aanvragen heen (zie verifyFailures). */
+  maxVerifyAttempts?: number;
+  /** Testhaak: hoe lang een adres geblokkeerd blijft na te veel foute pogingen. */
+  verifyBlockDurationMs?: number;
   /**
    * Productie-only: serveert de gebouwde runtime-dist op "/" en de twee
    * mini-apps op /miniapps/lijstje en /miniapps/betalen (paden relatief aan
@@ -32,6 +40,18 @@ const DEFAULT_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 
 const MIME_BY_EXT: Record<string, string> = { svg: "image/svg+xml", png: "image/png" };
 
+const MAX_NAAM_LENGTE = 200;
+// Zero-width tekens en een BOM zijn onzichtbaar maar niet leeg voor trim():
+// zonder deze filtering kan een naam die alleen uit zulke tekens bestaat
+// langs de lege-naamcontrole glippen.
+const ONZICHTBARE_TEKENS = /[\u200B-\u200D\uFEFF]/g;
+
+/** Weigert een naam die geen tekst is, te lang is, of onzichtbaar leeg is. */
+function naamIsGeldig(naam: unknown): naam is string {
+  if (typeof naam !== "string" || naam.length > MAX_NAAM_LENGTE) return false;
+  return naam.replace(ONZICHTBARE_TEKENS, "").trim() !== "";
+}
+
 /**
  * Zonder tenant-logo blijft het standaardicoon staan. Mét logo is het formaat
  * onbekend (kan een SVG-woordmerk of een PNG zijn) — vandaar `sizes: "any"`
@@ -46,15 +66,67 @@ function iconFor(logoUrl: string | undefined): { src: string; sizes: string; typ
 }
 
 export function createApp(opts: Options): App {
+  // In demomodus staat de inlogcode op het scherm, en met AUTH_SECRET=e2e
+  // ligt dezelfde code op straat via /api/auth/debug-last-code hieronder: in
+  // beide gevallen is identiteit betekenisloos. Met beheerders erbij zou
+  // iedere bezoeker het ledenregister kunnen lezen. Die combinatie weigeren we.
+  if ((opts.demoShowCode || opts.authSecret === "e2e") && opts.tenantConfig.admins?.length) {
+    throw new Error(
+      "Demomodus (DEMO_SHOW_CODE) of AUTH_SECRET=e2e kan niet samen met beheerders: " +
+        "in beide gevallen kan iedereen elk e-mailadres zijn.",
+    );
+  }
+
   const app = new Hono() as App;
   const tokenTtlMs = opts.tokenTtlMs ?? DEFAULT_TOKEN_TTL_MS;
-  const codes = new Map<string, { code: string; expires: number; attempts: number }>();
+  const codes = new Map<string, { code: string; expires: number }>();
   const mockPayments = new Map<string, { polls: number }>();
-  const MAX_VERIFY_ATTEMPTS = 5;
+  // Foute pogingen tellen per genormaliseerd e-mailadres (trim + lowercase,
+  // zie normaliseer hieronder), over aanvragen heen: een nieuwe code
+  // aanvragen zet deze teller niet terug, en ook een andere spelling van
+  // hetzelfde adres deelt dezelfde teller — anders geeft elke schrijfwijze
+  // een verse reeks gokpogingen (dat was het lek). Bij te veel pogingen
+  // wordt het adres tijdelijk geblokkeerd in plaats van dat de teller weer
+  // op nul begint, zodat een gebruiker die zich verschrijft niet voorgoed
+  // vastloopt.
+  const verifyFailures = new Map<string, { attempts: number; blockedUntil: number; laatstOp: number }>();
+  const MAX_VERIFY_ATTEMPTS = opts.maxVerifyAttempts ?? 20;
+  const VERIFY_BLOCK_DURATION_MS = opts.verifyBlockDurationMs ?? 15 * 60_000;
   const MAX_MOCK_PAYMENTS = 1000;
 
+  // Eén normalisatie voor alle sleutels rond inloggen: `codes`,
+  // `verifyFailures` én de tokeninhoud gebruiken dezelfde vorm als
+  // `isAdmin` (packages/tenant/src/tenant.ts). Zonder dit gebruikt de teller
+  // het ruwe adres terwijl de beheerderscontrole normaliseert, waardoor
+  // "BeStUuR@Example.ORG" een andere sleutel is dan "bestuur@example.org"
+  // maar wél hetzelfde token oplevert — dat was het lek.
+  const normaliseer = (email: string): string => email.trim().toLowerCase();
+
+  const isGeblokkeerd = (email: string): boolean => {
+    const s = verifyFailures.get(email);
+    if (!s || s.blockedUntil === 0) return false; // nog niet geblokkeerd: teller loopt door
+    if (s.blockedUntil > Date.now()) return true;
+    verifyFailures.delete(email); // blokkade verlopen: fris beginnen
+    return false;
+  };
+
+  const registreerFouteCode = (email: string): void => {
+    const s = verifyFailures.get(email) ?? { attempts: 0, blockedUntil: 0, laatstOp: 0 };
+    s.attempts++;
+    s.laatstOp = Date.now();
+    if (s.attempts >= MAX_VERIFY_ATTEMPTS) {
+      s.blockedUntil = Date.now() + VERIFY_BLOCK_DURATION_MS;
+      s.attempts = 0;
+    }
+    verifyFailures.set(email, s);
+  };
+
   // Publiek: de shell heeft naam, kleuren en catalogus nodig vóór de inlog.
-  app.get("/api/tenant", (c) => c.json(opts.tenantConfig));
+  // `admins` (e-mailadressen van bestuursleden) is geen publieke informatie.
+  app.get("/api/tenant", (c) => {
+    const { admins: _admins, ...publiek } = opts.tenantConfig;
+    return c.json(publiek);
+  });
 
   // Het webmanifest hoort bij de tenant, niet bij de build: het image is
   // tenant-neutraal (zie Dockerfile/docker-compose.yml), de tenantconfiguratie
@@ -89,18 +161,43 @@ export function createApp(opts: Options): App {
     if (!Number.isFinite(ts) || Date.now() - ts > tokenTtlMs) return false;
     return true;
   };
+  // Hergebruikt verifyToken voor de HMAC-/TTL-controle; leest daarna alleen
+  // het al-gevalideerde e-mailadres uit de payload. Zo bestaat er maar één
+  // plek die bepaalt of een token geldig is.
+  const emailUitToken = (token: string | undefined): string | null => {
+    if (!verifyToken(token)) return null;
+    const payload = token!.split(".")[0];
+    const decoded = Buffer.from(payload, "base64url").toString();
+    return decoded.slice(0, decoded.lastIndexOf("|"));
+  };
+  const emailVanRequest = (c: Context): string | null =>
+    emailUitToken(c.req.header("Authorization")?.replace(/^Bearer /, ""));
 
   app.post("/api/auth/request-code", async (c) => {
     const { email } = await c.req.json<{ email: string }>();
     if (!email?.includes("@")) return c.body(null, 400);
+    const key = normaliseer(email);
     const now = Date.now();
-    // Ruim vervallen codes op vóór het zetten van een nieuwe (goedkope,
-    // opportunistische opschoning i.p.v. een aparte cron/timer).
-    for (const [key, entry] of codes) if (entry.expires < now) codes.delete(key);
-    const code = String(randomInt(100000, 1000000));
-    codes.set(email, { code, expires: now + 10 * 60_000, attempts: 0 });
+    // Ruim vervallen codes en vervallen blokkades/tellers op vóór het zetten
+    // van een nieuwe code (goedkope, opportunistische opschoning i.p.v. een
+    // aparte cron/timer).
+    for (const [k, entry] of codes) if (entry.expires < now) codes.delete(k);
+    // Ook tellers die de drempel nooit haalden moeten weg, anders groeit deze
+    // map onbeperkt: één foute poging op willekeurig veel adressen zou anders
+    // evenveel permanente records opleveren. Een teller die langer dan de
+    // blokkadeduur onaangeroerd is, weggooien kost geen bescherming: de
+    // blokkade zou na diezelfde tijd tóch vervallen zijn.
+    for (const [k, s] of verifyFailures) {
+      const vervalt = Math.max(s.blockedUntil, s.laatstOp + VERIFY_BLOCK_DURATION_MS);
+      if (vervalt < now) verifyFailures.delete(k);
+    }
+    const code = String(randomInt(100000000, 1000000000));
+    // Bewust geen `attempts` hier: de pogingenteller leeft in verifyFailures
+    // en blijft bestaan zolang het adres niet geblokkeerd raakt of inlogt,
+    // juist zodat een nieuwe aanvraag geen frisse reeks gokpogingen geeft.
+    codes.set(key, { code, expires: now + 10 * 60_000 });
     app.debugLastCode = code;
-    console.log(`[plein-auth] code voor ${email}: ${code}`);
+    console.log(`[plein-auth] code voor ${key}: ${code}`);
     // optioneel: SMTP_URL → nodemailer.sendMail; stdout blijft de primaire MVP-flow
     if (opts.demoShowCode) return c.json({ demoCode: code });
     return c.body(null, 204);
@@ -111,20 +208,30 @@ export function createApp(opts: Options): App {
   }
 
   app.post("/api/auth/verify", async (c) => {
-    const { email, code } = await c.req.json<{ email: string; code: string }>();
-    const entry = codes.get(email);
+    const { email, code } = await c.req.json<{ email: unknown; code: unknown }>();
+    // Zelfde typecontrole als request-code: zonder deze regel gooit
+    // normaliseer() op een niet-tekstuele waarde en wordt het een 500.
+    if (typeof email !== "string" || typeof code !== "string") return c.body(null, 400);
+    const key = normaliseer(email);
+    // Vóór de codecontrole: een nieuwe code aanvragen mag een blokkade niet
+    // omzeilen. Zonder deze regel kost brute-force op de negencijferige code
+    // hooguit MAX_VERIFY_ATTEMPTS gokken per aanvraag, met onbeperkt veel
+    // aanvragen. De teller in verifyFailures loopt over aanvragen heen door
+    // én gebruikt hetzelfde genormaliseerde adres (`key`) als het token
+    // hieronder: zonder die normalisatie kreeg elke andere spelling van
+    // hetzelfde adres (hoofdletters, spaties) zijn eigen verse pogingen,
+    // terwijl `isAdmin` alle spellingen als hetzelfde adres herkende. Dát was
+    // het lek.
+    if (isGeblokkeerd(key)) return c.body(null, 401);
+    const entry = codes.get(key);
     if (!entry || entry.expires < Date.now()) return c.body(null, 401);
     if (entry.code !== code) {
-      entry.attempts++;
-      // Na MAX_VERIFY_ATTEMPTS foute pogingen: code weggooien. Een volgende
-      // verify (zelfs met de juiste code) faalt dan met 401 tot de gebruiker
-      // een nieuwe code aanvraagt — brute-force op de 6-cijferige code kost
-      // zo hooguit 5 gokken per aangevraagde code.
-      if (entry.attempts >= MAX_VERIFY_ATTEMPTS) codes.delete(email);
+      registreerFouteCode(key);
       return c.body(null, 401);
     }
-    codes.delete(email);
-    return c.json({ token: sign(email, Date.now()) });
+    codes.delete(key);
+    verifyFailures.delete(key);
+    return c.json({ token: sign(key, Date.now()) });
   });
 
   app.use("/api/payments/*", async (c, next) => {
@@ -169,6 +276,61 @@ export function createApp(opts: Options): App {
     const mollie = createMollieClient({ apiKey: opts.mollieApiKey! });
     const payment = await mollie.payments.get(id);
     return c.json({ status: payment.status });
+  });
+
+  // Ledenregister is opt-in per tenant (`ledenregister: true`), standaard
+  // uit. De shell verbergen is geen beveiliging: zonder deze poort zou een
+  // installatie zonder register alsnog ledenrecords kunnen aanmaken en
+  // teruggeven zodra iemand de routes rechtstreeks aanroept.
+  const ledenregisterPoort = async (c: Context, next: () => Promise<void>) => {
+    if (!opts.tenantConfig.ledenregister) return c.body(null, 403);
+    await next();
+  };
+  app.use("/api/leden", ledenregisterPoort);
+  app.use("/api/leden/*", ledenregisterPoort);
+  app.use("/api/leden.csv", ledenregisterPoort);
+
+  app.get("/api/leden/mij", (c) => {
+    const email = emailVanRequest(c);
+    if (!email) return c.body(null, 401);
+    const lid = vindOpEmail(opts.db, email);
+    return lid ? c.json(lid) : c.body(null, 404);
+  });
+
+  // Losse route i.p.v. een veld op /api/leden/mij: die route gaat over het
+  // eigen lidmaatschap en geeft 404 zonder record, terwijl een bestuurslid
+  // geen lid hoeft te zijn. Eén route, één betekenis; de shell gebruikt dit
+  // alleen om de knop naar het ledenregister te tonen, niet als beveiliging
+  // (die zit op /api/leden en /api/leden.csv zelf).
+  app.get("/api/leden/beheerder", (c) => {
+    const email = emailVanRequest(c);
+    if (!email) return c.body(null, 401);
+    return c.json({ beheerder: isAdmin(opts.tenantConfig, email) });
+  });
+
+  app.post("/api/leden", async (c) => {
+    const email = emailVanRequest(c);
+    if (!email) return c.body(null, 401);
+    const { naam } = await c.req.json<{ naam: unknown }>();
+    if (!naamIsGeldig(naam)) return c.body(null, 400);
+    if (vindOpEmail(opts.db, email)) return c.body(null, 409);
+    return c.json(meldAan(opts.db, email, naam), 201);
+  });
+
+  // Ledenlijst en -export zijn alleen voor beheerders: e-mailadres uit het
+  // token moet voorkomen in `tenantConfig.admins`.
+  app.get("/api/leden", (c) => {
+    const email = emailVanRequest(c);
+    if (!email) return c.body(null, 401);
+    if (!isAdmin(opts.tenantConfig, email)) return c.body(null, 403);
+    return c.json(alleLeden(opts.db));
+  });
+
+  app.get("/api/leden.csv", (c) => {
+    const email = emailVanRequest(c);
+    if (!email) return c.body(null, 401);
+    if (!isAdmin(opts.tenantConfig, email)) return c.body(null, 403);
+    return c.body(alsCsv(alleLeden(opts.db)), 200, { "Content-Type": "text/csv" });
   });
 
   if (opts.serveStaticAssets) {

@@ -27,7 +27,13 @@
         "nl": { "$ref": "#/$defs/welcomeText" },
         "en": { "$ref": "#/$defs/welcomeText" }
       }
-    }
+    },
+    "admins": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "ledenregister": { "type": "boolean" }
   },
   "$defs": {
     "welcomeText": {

@@ -4,7 +4,9 @@
 > wist rsync de server-side `.env` (die staat bewust niet in git):
 > `rsync -az --delete --exclude .env --exclude node_modules --exclude .git ./ nextcloud-vps:/opt/docker/openplein/`
 > De demo draait publiek met `DEMO_SHOW_CODE=1` (inlogcode op het scherm, geen
-> SMTP) — alleen combineren met een Mollie-TESTkey, nooit live.
+> SMTP) — alleen combineren met een Mollie-TESTkey, nooit live. **En alleen
+> zolang deze tenantconfiguratie geen `admins` heeft** — zie 2d voor waarom
+> die twee niet samen mogen (de server weigert dat zelf ook te starten).
 
 Deploy-runbook voor OpenPlein op de bestaande Hostinger-VPS
 (`88.222.220.64`, Docker + Caddy, zie `nextcloud-vps` ssh-alias). Volgt het
@@ -75,6 +77,43 @@ starten (`process.exit(1)`) in plaats van door te draaien met een lege
 HMAC-sleutel — check `docker compose logs openplein` als de container direct
 stopt na `up`.
 
+**`DB_PATH`** hoeft niet in `.env`: `docker-compose.yml` zet hem al op
+`/app/data/plein.db`, binnen het gemounte volume `openplein-data`. Dat
+bestand is de ledenadministratie (namen, e-mailadressen, aanmeldstatus) —
+**dit volume hoort in de back-up.** Zonder dat volume overleeft de database
+geen herstart of rebuild van de container en is bij de eerstvolgende deploy
+elk lid weg. Lokaal (buiten Docker) bepaalt `DB_PATH` hetzelfde, met
+`./plein.db` als standaard relatief aan `apps/demo/server`.
+
+**Een back-up maken terwijl de server draait:** het bestand met `cp`
+kopiëren terwijl er tegelijk in geschreven wordt, kan een kapotte kopie
+opleveren (een schrijfactie kan halverwege staan op het moment van kopiëren).
+Het Node-image bevat geen losse `sqlite3`-CLI, maar wel `node:sqlite` — en
+die module heeft een eigen online-backupfunctie die een consistente kopie
+maakt terwijl de database gewoon in gebruik blijft:
+
+```bash
+docker compose exec openplein node -e "
+  const { DatabaseSync, backup } = require('node:sqlite');
+  const bron = new DatabaseSync('/app/data/plein.db', { readOnly: true });
+  backup(bron, '/app/data/plein-backup.db').then(() => bron.close());
+"
+docker compose cp openplein:/app/data/plein-backup.db "./plein-backup-$(date +%F).db"
+docker compose exec openplein rm /app/data/plein-backup.db
+```
+
+Werkt dat om wat voor reden dan ook niet, gebruik dan de trage maar zekere
+stop-kopieer-start-volgorde (even geen inloggen mogelijk tijdens de back-up):
+
+```bash
+docker compose stop openplein
+# Volumenaam controleren met `docker volume ls` als de projectnaam afwijkt;
+# Compose prefixt de naam uit docker-compose.yml met de mapnaam van het project.
+docker run --rm -v openplein_openplein-data:/data -v "$PWD":/back-up alpine \
+  cp /data/plein.db "/back-up/plein-backup-$(date +%F).db"
+docker compose start openplein
+```
+
 ## 2b. Tenantconfiguratie: verplicht, per installatie
 
 **Het Docker-image is tenant-neutraal**: er zit géén tenantconfiguratie in
@@ -125,6 +164,21 @@ samenvatting voor wie een nieuwe tenant inricht:
 - **`catalog`** (verplicht, mag leeg): de mini-apps van deze installatie,
   elk een manifest zoals `docs/miniapp-spec.md` beschrijft.
 - **`welcome`** (optioneel): de inhoud van het uitgelogde scherm, per taal.
+- **`admins`** (optioneel): e-mailadressen van bestuursleden, hoofdletter-
+  ongevoelig vergeleken. Alleen deze adressen zien `/api/leden` en
+  `/api/leden.csv`. **Mag niet samen met `DEMO_SHOW_CODE=1` of met
+  `AUTH_SECRET=e2e`** — zie 2d.
+- **`ledenregister`** (optioneel, boolean): zet het ledenregister voor deze
+  installatie aan. Staat standaard uit (ontbreekt het veld, of staat het op
+  `false`, dan geeft de server op elke `/api/leden`-route een 403, ook met
+  een geldig token en ook voor een beheerder). Zet dit pas op `true` als er
+  ook `admins` ingevuld zijn — een register zonder iemand die het kan
+  inzien of opschonen is precies de situatie die dit veld voorkomt. **Loop
+  bij het aanzetten ook de `welcome`-tekst van deze tenant na**: de
+  meegeleverde SAIG-configuratie (`deploy/tenant.saig.json`) zegt op het
+  inlogscherm dat gegevens niet in een database worden bewaard. Zet je
+  `ledenregister: true` zonder die zin aan te passen, dan staat er een
+  onwaarheid op het scherm.
 
 ### Het `welcome`-blok
 
@@ -144,6 +198,35 @@ samenvatting voor wie een nieuwe tenant inricht:
 - **Zonder `welcome`-blok helemaal** krijgt de tenant gewoon een werkend
   uitgelogde scherm: naam/logo en het inlogformulier, zonder introtekst of
   secties. `welcome` is dus puur een uitbreiding, geen vereiste.
+
+## 2d. Beheerders en identiteitsvalse modi
+
+Zet je `admins` in de tenantconfiguratie, dan mag de server niet ook in een
+modus draaien waarin iedereen elk e-mailadres kan "zijn" — anders leest
+iedere bezoeker het volledige ledenregister met namen en adressen. Twee
+omgevingsvariabelen doen dat:
+
+- **`DEMO_SHOW_CODE=1`** toont de inlogcode op het scherm in plaats van hem
+  te versturen; wie het scherm ziet, logt in als wie hij wil.
+- **`AUTH_SECRET=e2e`** opent `GET /api/auth/debug-last-code`, een tweede,
+  ongeauthenticeerde weg naar dezelfde code, bedoeld voor de e2e-tests in
+  `e2e/tests/`. Zet dit buiten die tests nooit.
+
+De server controleert dit zelf: staat een van beide aan terwijl `admins`
+gevuld is, dan weigert het proces te starten (`process.exit(1)`, met een
+leesbare melding in `docker compose logs`) in plaats van live te gaan met
+een gat. Dat is bewust gedrag — de melding zegt waarom, dus dit hoeft geen
+verrassing te zijn bij het inrichten van een nieuwe klant.
+
+**Zonder SMTP-integratie** (die is er nog niet) krijgt een bestuurslid dat
+inlogt terwijl `DEMO_SHOW_CODE` uit staat zijn inlogcode dus niet
+vanzelf: die staat alleen in `docker compose logs openplein`, op de regel
+`[plein-auth] code voor <adres>: <code>`. De beheerder van de installatie
+leest die code daar en geeft hem (telefonisch, of via een ander kanaal)
+door aan het bestuurslid. Dat is werkbaar voor een vereniging met een klein
+bestuur, maar is een **tijdelijke situatie**: het schaalt niet naar meer
+dan een handjevol beheerders en hoort te verdwijnen zodra er een
+SMTP-integratie is.
 
 ## 3. Build + start
 
@@ -242,3 +325,6 @@ docker compose down
 # vorige commit uitchecken/rsyncen, dan opnieuw:
 docker compose up -d --build
 ```
+
+**Nooit `docker compose down -v`** hier: de `-v` verwijdert ook het
+`openplein-data`-volume, en daarmee de hele ledenadministratie.
